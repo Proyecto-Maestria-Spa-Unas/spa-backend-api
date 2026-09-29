@@ -1,5 +1,7 @@
 # Backend Spa de Uñas - FastAPI
 
+![CI](https://github.com/Proyecto-Maestria-Spa-Unas/spa-backend-api/actions/workflows/ci.yml/badge.svg?branch=develop)
+
 Backend desarrollado con FastAPI para la gestión y control interno del inventario de un spa de uñas: autenticación, control de acceso por roles, productos, entradas y salidas, historial de movimientos y alertas de bajo stock. Este proyecto sigue una arquitectura hexagonal (puertos y adaptadores), modular y escalable, preparada para entornos de desarrollo y producción.
 
 ## 🚀 Tecnologías Principales
