@@ -3,5 +3,5 @@ uvicorn[standard]>=0.32
 SQLAlchemy>=2.0
 psycopg[binary]>=3.2
 pydantic-settings>=2.6
-python-jose[cryptography]>=3.4
+PyJWT>=2.10
 python-dotenv>=1.0

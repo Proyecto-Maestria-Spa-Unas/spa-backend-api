@@ -8,7 +8,7 @@ Backend desarrollado con FastAPI para la gestión y control interno del inventar
 * Uvicorn
 * SQLAlchemy
 * Pydantic Settings
-* Python-JOSE (JWT)
+* PyJWT (JWT)
 * Python-dotenv
 * Psycopg (driver PostgreSQL)
 * PostgreSQL + PostGIS (Supabase)
@@ -117,7 +117,7 @@ Permite cargar variables de entorno desde un archivo `.env`.
 ### 🔹 pydantic-settings
 Gestión estructurada y tipada de configuraciones usando Pydantic.
 
-### 🔹 python-jose
+### 🔹 PyJWT
 Implementación de JWT para autenticación y autorización.
 
 ### 🔹 SQLAlchemy
@@ -184,7 +184,7 @@ El código se organiza por capas siguiendo arquitectura hexagonal. Detalle en `d
 | `app/application` | Casos de uso (registrar producto, registrar entrada/salida, descontinuar, consultar alertas). |
 | `app/application/ports` | Interfaces que los casos de uso necesitan: repositorios, generador de tokens, hasher de contraseñas. |
 | `app/infrastructure/db` | Adaptadores SQLAlchemy que implementan los puertos contra PostgreSQL/Supabase. |
-| `app/infrastructure/security` | JWT (python-jose), hashing de contraseñas y control de acceso por rol. |
+| `app/infrastructure/security` | JWT (PyJWT), hashing de contraseñas y control de acceso por rol. |
 | `app/api/v1` | Routers de FastAPI y esquemas Pydantic de entrada/salida. |
 | `app/core` | Configuración (`config.py`), dependencias compartidas y logging. |
 | `tests` | Pruebas unitarias y de integración. |

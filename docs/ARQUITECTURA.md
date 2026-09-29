@@ -8,7 +8,7 @@ app/
 │   └── <caso_uso>.py    # RegistrarSalida, RegistrarEntrada, DescontinuarProducto, ConsultarAlertas...
 ├── infrastructure/
 │   ├── db/              # Adaptadores SQLAlchemy → PostgreSQL/Supabase (implementan los puertos)
-│   └── security/        # JWT (python-jose), hashing de contraseñas, RBAC
+│   └── security/        # JWT (PyJWT), hashing de contraseñas, RBAC
 ├── api/v1/              # Adaptadores de entrada HTTP (routers FastAPI + esquemas Pydantic)
 └── core/                # Configuración (pydantic-settings), logging, dependencias
 ```
