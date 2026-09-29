@@ -226,3 +226,74 @@ La imagen se ejecuta con un usuario sin privilegios y expone el puerto 8000.
 2. Hacer commits con Conventional Commits y firma: `git commit -s -m "feat(movimientos): registrar salida (HU-07)"`.
 3. Abrir un Pull Request hacia `develop`.
 4. El PR solo se puede fusionar cuando pasan los checks `politica / pr`, `calidad / pipeline`, `seguridad / scan` (y `qa-gate / qa` cuando QA esté activo) y lo aprueba un integrante del equipo responsable.
+
+## 🌿 Cómo contribuir
+
+### 1️⃣ Clonar el repositorio (solo la primera vez)
+
+Use **Git Bash** en Windows o la terminal en Linux/Mac:
+
+```
+git config --global core.autocrlf input
+git clone https://github.com/Proyecto-Maestria-Spa-Unas/spa-backend-api.git
+cd spa-backend-api
+git switch develop
+```
+
+### 2️⃣ Crear la rama de su tarea
+
+Nunca se trabaja directamente sobre `main` ni `develop`: GitHub rechaza esos push. Cada tarea tiene su rama, creada desde `develop` actualizada:
+
+```
+git switch develop
+git pull
+git switch -c feature/B1-docker-compose
+```
+
+Formato obligatorio: **`tipo/ID-descripcion-corta`**. El `ID` es el de la tarea del sprint en mayúscula (D1, B2, F3, Q1…) y la descripción va en minúsculas, con guiones y sin espacios ni tildes.
+
+| Tipo | Úselo para |
+|---|---|
+| `feature/` | Funcionalidad nueva |
+| `fix/` | Corrección de un defecto |
+| `docs/` | Documentación |
+| `test/` | Pruebas |
+| `refactor/` | Mejora interna sin cambio funcional |
+| `chore/` · `ci/` | Mantenimiento y automatización |
+
+### 3️⃣ Guardar y subir los cambios
+
+```
+git add .
+git commit -s -m "build(docker): entorno local con docker compose (B1)"
+git push -u origin feature/B1-docker-compose
+```
+
+El mensaje sigue **Conventional Commits**: `tipo(alcance): descripción (ID)`. La opción `-s` firma el commit.
+
+### 4️⃣ Abrir el Pull Request
+
+```
+gh pr create --base develop --fill
+```
+
+O desde GitHub con el botón **Compare & pull request**. En la descripción escriba `Closes Proyecto-Maestria-Spa-Unas/spa-backend-api#<número de la tarea>`. El PR se fusiona cuando los checks obligatorios están en verde.
+
+### 5️⃣ Mantener su rama al día
+
+Si `develop` avanzó mientras usted trabajaba:
+
+```
+git switch develop
+git pull
+git switch -
+git rebase develop
+git push --force-with-lease
+```
+
+`--force-with-lease` solo se usa sobre **su propia rama**, nunca sobre `main` ni `develop`.
+
+### ❌ Qué no hacer
+
+* No subir archivos `.env`, contraseñas ni llaves: el escaneo de seguridad bloqueará el PR.
+* No mezclar varias tareas en una misma rama: una rama, una tarea, un PR.
