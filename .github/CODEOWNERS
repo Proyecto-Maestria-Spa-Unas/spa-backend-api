@@ -1,0 +1,7 @@
+*                             @Proyecto-Maestria-Spa-Unas/equipo-backend
+/app/domain/                  @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-analistas
+/app/infrastructure/db/       @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-datos
+/app/infrastructure/security/ @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/plataforma-admins
+/tests/                       @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-qa
+/Dockerfile                   @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-devops
+/.github/                     @Proyecto-Maestria-Spa-Unas/equipo-devops

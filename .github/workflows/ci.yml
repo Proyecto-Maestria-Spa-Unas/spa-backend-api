@@ -1,0 +1,36 @@
+name: ci
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  politica:
+    if: github.event_name == 'pull_request'
+    uses: Proyecto-Maestria-Spa-Unas/spa-devops-workflows/.github/workflows/pr-policy.yml@main
+
+  calidad:
+    uses: Proyecto-Maestria-Spa-Unas/spa-devops-workflows/.github/workflows/python-ci.yml@main
+    with:
+      python-version: "3.12"
+      package: app
+      coverage-min: 80
+
+  seguridad:
+    uses: Proyecto-Maestria-Spa-Unas/spa-devops-workflows/.github/workflows/security.yml@main
+
+  qa-gate:
+    needs: [calidad]
+    if: github.event_name == 'pull_request' && vars.ENABLE_QA_GATE == 'true'
+    uses: Proyecto-Maestria-Spa-Unas/spa-devops-workflows/.github/workflows/qa-gate.yml@main
+    with:
+      suite: api
+    secrets: inherit
