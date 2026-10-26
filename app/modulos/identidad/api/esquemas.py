@@ -59,3 +59,11 @@ class Rol(BaseModel):
     codigo: CodigoRol
     nombre: str
     permisos: list[str]
+
+
+class RecuperarEntrada(BaseModel):
+    correo: str = CORREO
+
+
+class Mensaje(BaseModel):
+    mensaje: str

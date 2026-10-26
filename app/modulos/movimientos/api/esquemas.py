@@ -21,7 +21,10 @@ class EntradaRegistrar(BaseModel):
     producto_id: UUID
     cantidad: Cantidad = Field(gt=0, description="RN-04: decimales solo si la unidad los admite")
     motivo_codigo: str = Field(examples=["COMPRA"])
-    costo_unitario: Costo | None = Field(default=None, ge=0, description="DEC-11")
+    costo_unitario: Costo | None = Field(
+        default=None, ge=0, description="Obligatorio en COMPRA: alimenta el costo promedio ponderado (DEC-11)"
+    )
+    proveedor_id: UUID | None = Field(default=None, description="Proveedor de la compra")
     observacion: str | None = Field(default=None, max_length=280)
 
 
@@ -45,6 +48,8 @@ class Movimiento(BaseModel):
     cantidad: Cantidad
     saldo_resultante: Cantidad
     costo_unitario: Costo | None = None
+    costo_promedio_resultante: Costo | None = Field(default=None, description="Kardex valorizado (DEC-11)")
+    proveedor_id: UUID | None = None
     observacion: str | None = None
     registrado_por: UUID
     ocurrido_en: datetime

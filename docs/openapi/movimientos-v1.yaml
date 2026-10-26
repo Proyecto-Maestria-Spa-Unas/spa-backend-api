@@ -470,7 +470,14 @@ components:
           - type: string
           - type: 'null'
           title: Costo Unitario
-          description: DEC-11
+          description: 'Obligatorio en COMPRA: alimenta el costo promedio ponderado (DEC-11)'
+        proveedor_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proveedor Id
+          description: Proveedor de la compra
         observacion:
           anyOf:
           - type: string
@@ -543,6 +550,18 @@ components:
           - type: string
           - type: 'null'
           title: Costo Unitario
+        costo_promedio_resultante:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Costo Promedio Resultante
+          description: Kardex valorizado (DEC-11)
+        proveedor_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proveedor Id
         observacion:
           anyOf:
           - type: string

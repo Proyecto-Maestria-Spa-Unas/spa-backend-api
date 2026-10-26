@@ -1,4 +1,4 @@
-"""Pruebas de contrato y seguridad sobre los 31 endpoints (RF-01, RNF-07).
+"""Pruebas de contrato y seguridad sobre los 37 endpoints (RF-01, RNF-07).
 
 Siguen siendo válidas después de implementar cada endpoint: comprueban que la ruta existe,
 que exige su permiso y que un usuario autorizado llega a la lógica del endpoint.
@@ -33,7 +33,7 @@ def test_cobertura_de_la_tabla() -> None:
     }
     en_tabla = {(c.metodo, c.ruta) for c in CASOS}
     assert declarados == en_tabla
-    assert len(CASOS) == 31
+    assert len(CASOS) == 37
 
 
 PROTEGIDOS = [c for c in CASOS if c.permiso != PUBLICO]

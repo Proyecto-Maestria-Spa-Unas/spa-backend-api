@@ -1,4 +1,4 @@
-"""Inventario de los 31 endpoints del contrato con una petición mínima válida.
+"""Inventario de los 37 endpoints del contrato con una petición mínima válida.
 
 Si agrega o cambia un endpoint, actualice esta tabla: test_cobertura_de_la_tabla falla si
 falta alguno. El permiso de cada fila debe coincidir con la sección 6 del documento.
@@ -29,6 +29,7 @@ class Caso:
 CASOS: list[Caso] = [
     # S1 · Identidad
     Caso("POST", "/auth/login", PUBLICO, "/auth/login", {"correo": "a@spa.co", "contrasena": "12345678"}),
+    Caso("POST", "/auth/recuperar", PUBLICO, "/auth/recuperar", {"correo": "a@spa.co"}),
     Caso("GET", "/auth/me", AUTENTICADO, "/auth/me"),
     Caso("GET", "/usuarios", "usuario.gestionar", "/usuarios"),
     Caso(
@@ -82,6 +83,15 @@ CASOS: list[Caso] = [
         "POST", "/productos/{producto_id}/descontinuar", "producto.descontinuar", f"/productos/{PRODUCTO}/descontinuar"
     ),
     Caso("POST", "/productos/{producto_id}/reactivar", "producto.descontinuar", f"/productos/{PRODUCTO}/reactivar"),
+    Caso("GET", "/proveedores", "producto.consultar", "/proveedores"),
+    Caso(
+        "POST",
+        "/proveedores",
+        "catalogo.administrar",
+        "/proveedores",
+        {"nombre": "Distribuidora Belleza", "nit": "900123456-7", "ubicacion": {"latitud": 4.65, "longitud": -74.08}},
+    ),
+    Caso("PATCH", "/proveedores/{proveedor_id}", "catalogo.administrar", f"/proveedores/{PRODUCTO}", {"activo": False}),
     # S3 · Movimientos
     Caso("GET", "/motivos-movimiento", "movimiento.consultar", "/motivos-movimiento", params={"tipo": "SALIDA"}),
     Caso(
@@ -122,5 +132,13 @@ CASOS: list[Caso] = [
         params={"desde": "2026-10-01", "hasta": "2026-10-31"},
     ),
     Caso("GET", "/analitica/cobertura", "analitica.consultar", "/analitica/cobertura"),
+    Caso("GET", "/analitica/kardex", "analitica.consultar", "/analitica/kardex", params={"producto_id": PRODUCTO}),
+    Caso(
+        "GET",
+        "/analitica/proveedores-cercanos",
+        "alerta.consultar",
+        "/analitica/proveedores-cercanos",
+        params={"latitud": "4.65", "longitud": "-74.08", "radio_km": "15"},
+    ),
     Caso("GET", "/analitica/exportar", "analitica.consultar", "/analitica/exportar", params={"conjunto": "inventario"}),
 ]
