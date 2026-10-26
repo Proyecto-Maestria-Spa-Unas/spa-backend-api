@@ -1,0 +1,525 @@
+openapi: 3.1.0
+info:
+  title: S4 · Alertas y analítica · Spa de Uñas
+  version: 1.0.0
+servers:
+- url: /api/v1
+paths:
+  /alertas:
+    get:
+      tags:
+      - analitica
+      summary: Productos que requieren reposición
+      description: alerta.consultar · HU-10, HU-11, RF-17, RF-18
+      operationId: listar_alertas
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: estado
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/EstadoAlerta'
+          - type: 'null'
+          title: Estado
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alerta'
+                title: Response Listar Alertas
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /alertas/resumen:
+    get:
+      tags:
+      - analitica
+      summary: Conteo por estado (indicador del menú)
+      description: alerta.consultar · RF-18
+      operationId: resumen_alertas
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenAlertas'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+  /analitica/tablero:
+    get:
+      tags:
+      - analitica
+      summary: Indicadores para la toma de decisiones
+      description: analitica.consultar · RF-19
+      operationId: tablero
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tablero'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+  /analitica/consumo:
+    get:
+      tags:
+      - analitica
+      summary: Consumo en un rango de fechas
+      description: analitica.consultar · RF-14
+      operationId: consumo
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: desde
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          title: Desde
+      - name: hasta
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date
+          title: Hasta
+      - name: agrupar_por
+        in: query
+        required: false
+        schema:
+          $ref: '#/components/schemas/AgrupacionConsumo'
+          default: categoria
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ConsumoItem'
+                title: Response Consumo
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /analitica/cobertura:
+    get:
+      tags:
+      - analitica
+      summary: Días de cobertura estimados
+      description: analitica.consultar · RF-17
+      operationId: cobertura
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Cobertura'
+                type: array
+                title: Response Cobertura
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+  /analitica/exportar:
+    get:
+      tags:
+      - analitica
+      summary: Exportar inventario o movimientos (DuckDB)
+      description: analitica.consultar · RNF-10
+      operationId: exportar
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: conjunto
+        in: query
+        required: true
+        schema:
+          enum:
+          - inventario
+          - movimientos
+          type: string
+          title: Conjunto
+      - name: formato
+        in: query
+        required: false
+        schema:
+          enum:
+          - csv
+          - parquet
+          type: string
+          default: csv
+          title: Formato
+      responses:
+        '200':
+          description: Archivo
+          content:
+            text/csv: {}
+            application/vnd.apache.parquet: {}
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+components:
+  schemas:
+    AgrupacionConsumo:
+      type: string
+      enum:
+      - categoria
+      - producto
+      - dia
+      title: AgrupacionConsumo
+    Alerta:
+      properties:
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+        codigo:
+          type: string
+          title: Codigo
+        nombre:
+          type: string
+          title: Nombre
+        stock_actual:
+          type: string
+          title: Stock Actual
+        stock_minimo:
+          type: string
+          title: Stock Minimo
+        estado:
+          $ref: '#/components/schemas/EstadoAlerta'
+        faltante:
+          type: string
+          title: Faltante
+          description: stock_minimo − stock_actual
+      type: object
+      required:
+      - producto_id
+      - codigo
+      - nombre
+      - stock_actual
+      - stock_minimo
+      - estado
+      - faltante
+      title: Alerta
+    Cobertura:
+      properties:
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+        codigo:
+          type: string
+          title: Codigo
+        nombre:
+          type: string
+          title: Nombre
+        stock_actual:
+          type: string
+          title: Stock Actual
+        consumo_diario_promedio:
+          type: string
+          title: Consumo Diario Promedio
+        dias_cobertura:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Dias Cobertura
+          description: null si no hubo consumo en 30 días
+      type: object
+      required:
+      - producto_id
+      - codigo
+      - nombre
+      - stock_actual
+      - consumo_diario_promedio
+      - dias_cobertura
+      title: Cobertura
+    ConsumoItem:
+      properties:
+        clave:
+          type: string
+          title: Clave
+          description: Categoría, código de producto o fecha, según agrupar_por
+        cantidad:
+          type: string
+          title: Cantidad
+      type: object
+      required:
+      - clave
+      - cantidad
+      title: ConsumoItem
+    ErrorCampo:
+      properties:
+        campo:
+          title: Campo
+          type: string
+        mensaje:
+          title: Mensaje
+          type: string
+      required:
+      - campo
+      - mensaje
+      title: ErrorCampo
+      type: object
+    EstadoAlerta:
+      type: string
+      enum:
+      - BAJO_STOCK
+      - AGOTADO
+      title: EstadoAlerta
+    Problema:
+      description: Cuerpo `application/problem+json` (RFC 9457) con `code` estable.
+      properties:
+        type:
+          title: Type
+          type: string
+        title:
+          title: Title
+          type: string
+        status:
+          title: Status
+          type: integer
+        detail:
+          title: Detail
+          type: string
+        code:
+          examples:
+          - SIN_PERMISO
+          title: Code
+          type: string
+        errors:
+          default: []
+          items:
+            $ref: '#/components/schemas/ErrorCampo'
+          title: Errors
+          type: array
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      title: Problema
+      type: object
+    ProductoRotacion:
+      properties:
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+        codigo:
+          type: string
+          title: Codigo
+        nombre:
+          type: string
+          title: Nombre
+        consumo:
+          type: string
+          title: Consumo
+      type: object
+      required:
+      - producto_id
+      - codigo
+      - nombre
+      - consumo
+      title: ProductoRotacion
+    ResumenAlertas:
+      properties:
+        bajo_stock:
+          type: integer
+          title: Bajo Stock
+        agotado:
+          type: integer
+          title: Agotado
+        total:
+          type: integer
+          title: Total
+      type: object
+      required:
+      - bajo_stock
+      - agotado
+      - total
+      title: ResumenAlertas
+    Tablero:
+      properties:
+        productos_por_estado:
+          additionalProperties:
+            type: integer
+          type: object
+          title: Productos Por Estado
+          examples:
+          - AGOTADO: 2
+            BAJO_STOCK: 5
+            DISPONIBLE: 40
+        valor_inventario:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Valor Inventario
+          description: null mientras DEC-11 no se decida
+        consumo_30_dias:
+          type: string
+          title: Consumo 30 Dias
+        top_rotacion:
+          items:
+            $ref: '#/components/schemas/ProductoRotacion'
+          type: array
+          maxItems: 10
+          title: Top Rotacion
+      type: object
+      required:
+      - productos_por_estado
+      - valor_inventario
+      - consumo_30_dias
+      - top_rotacion
+      title: Tablero
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      description: JWT emitido por POST /api/v1/auth/login
+      scheme: bearer

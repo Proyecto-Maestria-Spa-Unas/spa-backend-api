@@ -1,7 +1,5 @@
 # Backend Spa de Uñas - FastAPI
 
-![CI](https://github.com/Proyecto-Maestria-Spa-Unas/spa-backend-api/actions/workflows/ci.yml/badge.svg?branch=develop)
-
 Backend desarrollado con FastAPI para la gestión y control interno del inventario de un spa de uñas: autenticación, control de acceso por roles, productos, entradas y salidas, historial de movimientos y alertas de bajo stock. Este proyecto sigue una arquitectura hexagonal (puertos y adaptadores), modular y escalable, preparada para entornos de desarrollo y producción.
 
 ## 🚀 Tecnologías Principales
@@ -10,7 +8,7 @@ Backend desarrollado con FastAPI para la gestión y control interno del inventar
 * Uvicorn
 * SQLAlchemy
 * Pydantic Settings
-* PyJWT (JWT)
+* PyJWT (JWT, ADR-0004)
 * Python-dotenv
 * Psycopg (driver PostgreSQL)
 * PostgreSQL + PostGIS (Supabase)
@@ -101,9 +99,12 @@ python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 
 Acceder a:
 
-* 📄 Documentación Swagger: http://127.0.0.1:8000/docs
-* 📘 Documentación Redoc: http://127.0.0.1:8000/redoc
+* 📄 Documentación Swagger: http://127.0.0.1:8000/api/v1/docs
+* 📘 Contrato vivo: http://127.0.0.1:8000/api/v1/openapi.json
 * 💚 Estado del servicio: http://127.0.0.1:8000/api/v1/health
+* 🗄️ Conexión con la base: http://127.0.0.1:8000/api/v1/health/ready
+
+Mientras un endpoint no esté implementado responde `501` con `code: NO_IMPLEMENTADO`. Todos exigen su permiso desde ya: sin token responden `401` y sin el permiso `403`.
 
 ## 📦 Dependencias Principales
 
@@ -120,7 +121,7 @@ Permite cargar variables de entorno desde un archivo `.env`.
 Gestión estructurada y tipada de configuraciones usando Pydantic.
 
 ### 🔹 PyJWT
-Implementación de JWT para autenticación y autorización.
+Emisión y verificación de JWT (HS256) para autenticación y autorización (ADR-0004).
 
 ### 🔹 SQLAlchemy
 ORM que permite interactuar con bases de datos relacionales usando modelos en Python.
@@ -130,6 +131,8 @@ Driver de PostgreSQL usado por SQLAlchemy para conectarse a Supabase.
 
 ### 🔹 Herramientas de desarrollo (requirements-dev.txt)
 * **pytest / pytest-cov / httpx**: pruebas automatizadas y cobertura.
+* **import-linter**: verifica que los 4 servicios no se importen entre sí y que se respeten las capas.
+* **PyYAML**: exporta los contratos OpenAPI por servicio.
 * **ruff**: linter y formateador de código.
 * **mypy**: verificación estática de tipos.
 * **pip-audit**: detección de dependencias con vulnerabilidades conocidas.
@@ -150,22 +153,10 @@ Debes:
 .env.example
 ```
 
-Este archivo contiene las variables necesarias sin datos sensibles, por ejemplo:
+Este archivo ya está en el repositorio con todas las variables y sus valores para desarrollo local:
 
 ```
-# Entorno
-APP_ENV=development
-
-# DB (Supabase: Project Settings → Database → Connection string)
-DB_URL=postgresql+psycopg://user:password@localhost:5432/spa
-
-# jwt
-JWT_SECRET=your_secret_key
-JWT_ALGORITHM=HS256
-JWT_EXPIRES_MINUTES=30
-
-# CORS
-CORS_ORIGINS=["http://localhost:5173"]
+cp .env.example .env
 ```
 
 Luego creas tu archivo real:
@@ -178,21 +169,24 @@ Luego creas tu archivo real:
 
 ## 📁 Organización del proyecto y patrones
 
-El código se organiza por capas siguiendo arquitectura hexagonal. Detalle en `docs/ARQUITECTURA.md`.
+Monolito modular con **4 servicios de dominio** (ADR-0009). Cada servicio vive en su carpeta con sus 4 capas hexagonales y en el Sprint 4 se extrae a su propio microservicio en EKS sin cambiar rutas. Detalle en `docs/ARQUITECTURA.md`.
 
-| Carpeta | Uso |
-|---|---|
-| `app/domain` | Entidades y reglas de negocio puras (estados de inventario, validación de stock, RN-01 a RN-14). No depende de FastAPI ni de SQLAlchemy. |
-| `app/application` | Casos de uso (registrar producto, registrar entrada/salida, descontinuar, consultar alertas). |
-| `app/application/ports` | Interfaces que los casos de uso necesitan: repositorios, generador de tokens, hasher de contraseñas. |
-| `app/infrastructure/db` | Adaptadores SQLAlchemy que implementan los puertos contra PostgreSQL/Supabase. |
-| `app/infrastructure/security` | JWT (PyJWT), hashing de contraseñas y control de acceso por rol. |
-| `app/api/v1` | Routers de FastAPI y esquemas Pydantic de entrada/salida. |
-| `app/core` | Configuración (`config.py`), dependencias compartidas y logging. |
-| `tests` | Pruebas unitarias y de integración. |
-| `main.py` | Punto de entrada para `uvicorn main:app`. |
+| Carpeta | Uso | Responsable |
+|---|---|---|
+| `app/compartido/` | Configuración, conexión a la base, seguridad (JWT y `requiere(permiso)`), errores problem+json, paginación, salud | Plataforma (cambios por PR revisado) |
+| `app/modulos/identidad/` | **S1** · login, usuarios, roles y permisos · 8 endpoints | ivonnelizethmoreno-cloud |
+| `app/modulos/catalogo/` | **S2** · productos, categorías, unidades, stock mínimo · 11 endpoints | Damx0611 |
+| `app/modulos/movimientos/` | **S3** · entradas, salidas, historial, anulación · 6 endpoints | Damx0611 |
+| `app/modulos/analitica/` | **S4** · alertas, tablero, consumo, cobertura, exportación · 6 endpoints | ivonnelizethmoreno-cloud |
+| `docs/openapi/` | Contrato de cada servicio (se genera desde el código) | ivonnelizethmoreno-cloud; aprueba equipo-frontend |
+| `tests/contrato/` | Seguridad y existencia de los 31 endpoints | Todos |
+| `tests/unit/<servicio>/` | Dominio y casos de uso, sin base | Dueño del servicio |
+| `tests/integration/<servicio>/` | Contra PostGIS (`docker compose up -d db`) | Dueño del servicio |
+| `docker-compose.yml`, `docker/` | Entorno local: PostGIS con el esquema de `spa-database` + API | Plataforma |
 
-⚠️ El esquema de base de datos se administra en el repositorio `spa-database`. Este backend no crea ni modifica tablas.
+Cada servicio tiene su propio `README.md` dentro de su carpeta con los endpoints, las tareas por sprint y lo que debe entregar.
+
+⚠️ El esquema de base de datos es propiedad de **S0 · Datos** (`spa-database`). Este backend no crea ni modifica tablas.
 
 ## 🧪 Pruebas y calidad
 
@@ -201,8 +195,9 @@ Los mismos comandos que ejecuta la integración continua:
 ```
 ruff check .
 ruff format --check .
-mypy app
-pytest --cov=app --cov-fail-under=80
+mypy .
+pytest --cov --cov-fail-under=80
+python scripts/exportar_contratos.py --check
 ```
 
 Para corregir el formato automáticamente:
@@ -211,89 +206,52 @@ Para corregir el formato automáticamente:
 ruff format .
 ```
 
+Las pruebas incluyen tres guardianes que no se deben desactivar:
+
+* `tests/contrato/`: cada endpoint existe, exige su permiso y responde errores en problem+json.
+* `tests/test_arquitectura.py`: ningún servicio importa a otro y el dominio no depende de frameworks.
+* `tests/test_contratos.py`: `docs/openapi/*.yaml` coincide con el código. Si cambia un esquema o una ruta, regenere con `python scripts/exportar_contratos.py` y abra el cambio como **PR de contrato**, que aprueba equipo-frontend.
+
 ## 🐳 Docker
+
+### Entorno local completo (recomendado)
+
+Clone `spa-database` al lado de este repositorio (misma carpeta padre) y ejecute:
+
+```
+docker compose up -d --build
+```
+
+* Base PostGIS en `localhost:54322` con **las mismas migraciones** que el pipeline aplica en Supabase.
+* API en http://localhost:8000/api/v1/docs.
+
+Solo la base (para ejecutar la API con `uvicorn --reload` desde el venv):
+
+```
+docker compose up -d db
+python -m uvicorn main:app --reload
+```
+
+Cuando Mike publique migraciones nuevas, recree la base local:
+
+```
+docker compose down -v
+docker compose up -d db
+```
+
+### Imagen sola
 
 ```
 docker build -t spa-backend-api .
 docker run --env-file .env -p 8000:8000 spa-backend-api
 ```
 
-La imagen se ejecuta con un usuario sin privilegios y expone el puerto 8000.
+La imagen se ejecuta con un usuario sin privilegios, expone el puerto 8000 y trae `HEALTHCHECK` sobre `/api/v1/health`. Es la misma base que usarán los microservicios en EKS (Sprint 4).
 
 ## 🔀 Flujo de trabajo
 
 1. Crear la rama desde `develop`: `git checkout -b feature/HU-07-registrar-salida`.
+1. Implementar solo dentro de la carpeta de su servicio. Si necesita algo de `app/compartido/`, propóngalo en un PR aparte.
 2. Hacer commits con Conventional Commits y firma: `git commit -s -m "feat(movimientos): registrar salida (HU-07)"`.
-3. Abrir un Pull Request hacia `develop`.
+3. Abrir un Pull Request hacia `develop` y completar la plantilla (Definición de terminado). Vercel publica una URL Preview del PR para que frontend y QA la prueben.
 4. El PR solo se puede fusionar cuando pasan los checks `politica / pr`, `calidad / pipeline`, `seguridad / scan` (y `qa-gate / qa` cuando QA esté activo) y lo aprueba un integrante del equipo responsable.
-
-## 🌿 Cómo contribuir
-
-### 1️⃣ Clonar el repositorio (solo la primera vez)
-
-Use **Git Bash** en Windows o la terminal en Linux/Mac:
-
-```
-git config --global core.autocrlf input
-git clone https://github.com/Proyecto-Maestria-Spa-Unas/spa-backend-api.git
-cd spa-backend-api
-git switch develop
-```
-
-### 2️⃣ Crear la rama de su tarea
-
-Nunca se trabaja directamente sobre `main` ni `develop`: GitHub rechaza esos push. Cada tarea tiene su rama, creada desde `develop` actualizada:
-
-```
-git switch develop
-git pull
-git switch -c feature/B1-docker-compose
-```
-
-Formato obligatorio: **`tipo/ID-descripcion-corta`**. El `ID` es el de la tarea del sprint en mayúscula (D1, B2, F3, Q1…) y la descripción va en minúsculas, con guiones y sin espacios ni tildes.
-
-| Tipo | Úselo para |
-|---|---|
-| `feature/` | Funcionalidad nueva |
-| `fix/` | Corrección de un defecto |
-| `docs/` | Documentación |
-| `test/` | Pruebas |
-| `refactor/` | Mejora interna sin cambio funcional |
-| `chore/` · `ci/` | Mantenimiento y automatización |
-
-### 3️⃣ Guardar y subir los cambios
-
-```
-git add .
-git commit -s -m "build(docker): entorno local con docker compose (B1)"
-git push -u origin feature/B1-docker-compose
-```
-
-El mensaje sigue **Conventional Commits**: `tipo(alcance): descripción (ID)`. La opción `-s` firma el commit.
-
-### 4️⃣ Abrir el Pull Request
-
-```
-gh pr create --base develop --fill
-```
-
-O desde GitHub con el botón **Compare & pull request**. En la descripción escriba `Closes Proyecto-Maestria-Spa-Unas/spa-backend-api#<número de la tarea>`. El PR se fusiona cuando los checks obligatorios están en verde.
-
-### 5️⃣ Mantener su rama al día
-
-Si `develop` avanzó mientras usted trabajaba:
-
-```
-git switch develop
-git pull
-git switch -
-git rebase develop
-git push --force-with-lease
-```
-
-`--force-with-lease` solo se usa sobre **su propia rama**, nunca sobre `main` ni `develop`.
-
-### ❌ Qué no hacer
-
-* No subir archivos `.env`, contraseñas ni llaves: el escaneo de seguridad bloqueará el PR.
-* No mezclar varias tareas en una misma rama: una rama, una tarea, un PR.

@@ -1,3 +1,5 @@
+# Dependencias de ejecución (Vercel lee pyproject.toml; Docker y CI leen este archivo).
+# Mantener ambos sincronizados: tests/test_dependencias.py lo verifica.
 fastapi>=0.141.1
 uvicorn[standard]>=0.32
 SQLAlchemy>=2.1.1

@@ -1,0 +1,47 @@
+# Entorno local completo: PostgreSQL/PostGIS con el esquema de spa-database + la API.
+#
+#   docker compose up -d --build      → API en http://localhost:8000/api/v1/docs
+#   docker compose logs -f api
+#   docker compose down -v            → borra también los datos locales
+#
+# Requiere spa-database clonado al lado de este repositorio (../spa-database) o la
+# variable SPA_DATABASE_DIR apuntando a su carpeta. La base se crea con las MISMAS
+# migraciones que el pipeline aplica en Supabase: nunca cree tablas a mano.
+name: spa-unas
+
+services:
+  db:
+    image: postgis/postgis:17-3.5
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "${DB_PORT_LOCAL:-54322}:5432"
+    volumes:
+      - datos-db:/var/lib/postgresql/data
+      - ./docker/db/20_spa_database.sh:/docker-entrypoint-initdb.d/20_spa_database.sh:ro
+      - ${SPA_DATABASE_DIR:-../spa-database}:/spa-database:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: development
+      DB_URL: postgresql+psycopg://postgres:postgres@db:5432/postgres
+      CORS_ORIGINS: '["http://localhost:5173"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  datos-db:

@@ -1,6 +1,6 @@
 [project]
 name = "spa-backend-api"
-version = "0.1.0"
+version = "1.0.0"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.141.1",
@@ -13,16 +13,16 @@ dependencies = [
 ]
 
 [tool.ruff]
-line-length = 110
+line-length = 120
 target-version = "py312"
-extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "N", "SIM", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101", "S105"]
+"tests/**" = ["S101", "S105", "S106"]
+"app/modulos/*/api/router.py" = ["ARG001"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -32,6 +32,17 @@ plugins = ["pydantic.mypy"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+markers = [
+    "integracion: requiere PostgreSQL/PostGIS (docker compose up db)",
+]
 
 [tool.coverage.run]
+source = ["app"]
 omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_also = [
+    "raise NotImplementedError",
+    "\\.\\.\\.$",
+    "if TYPE_CHECKING:",
+]

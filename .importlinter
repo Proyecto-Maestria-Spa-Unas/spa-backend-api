@@ -1,0 +1,48 @@
+[importlinter]
+root_package = app
+include_external_packages = True
+
+[importlinter:contract:modulos-independientes]
+name = Los 4 servicios de dominio no se importan entre sí
+type = independence
+modules =
+    app.modulos.identidad
+    app.modulos.catalogo
+    app.modulos.movimientos
+    app.modulos.analitica
+
+[importlinter:contract:compartido-no-depende-de-modulos]
+name = compartido no importa ningún módulo de dominio
+type = forbidden
+source_modules =
+    app.compartido
+forbidden_modules =
+    app.modulos
+
+[importlinter:contract:capas-hexagonales]
+name = Capas hexagonales dentro de cada servicio (api > infrastructure > application > domain)
+type = layers
+containers =
+    app.modulos.identidad
+    app.modulos.catalogo
+    app.modulos.movimientos
+    app.modulos.analitica
+layers =
+    api
+    infrastructure
+    application
+    domain
+
+[importlinter:contract:dominio-puro]
+name = domain no depende de frameworks ni de la base
+type = forbidden
+source_modules =
+    app.modulos.identidad.domain
+    app.modulos.catalogo.domain
+    app.modulos.movimientos.domain
+    app.modulos.analitica.domain
+forbidden_modules =
+    fastapi
+    sqlalchemy
+    pydantic
+    app.compartido

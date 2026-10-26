@@ -1,0 +1,1009 @@
+openapi: 3.1.0
+info:
+  title: S2 · Catálogo · Spa de Uñas
+  version: 1.0.0
+servers:
+- url: /api/v1
+paths:
+  /categorias:
+    get:
+      tags:
+      - catalogo
+      summary: Listar categorías activas
+      description: producto.consultar · HU-04, RF-12 · Sprint 1 (B4)
+      operationId: listar_categorias
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Categoria'
+                type: array
+                title: Response Listar Categorias
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+    post:
+      tags:
+      - catalogo
+      summary: Crear categoría
+      description: catalogo.administrar · RNF-09
+      operationId: crear_categoria
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaCrear'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categoria'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+  /categorias/{categoria_id}:
+    patch:
+      tags:
+      - catalogo
+      summary: Renombrar o desactivar categoría
+      description: catalogo.administrar · RNF-09
+      operationId: actualizar_categoria
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: categoria_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Categoria Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoriaActualizar'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Categoria'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /unidades-medida:
+    get:
+      tags:
+      - catalogo
+      summary: Unidades de medida
+      description: producto.consultar · HU-02
+      operationId: listar_unidades
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/UnidadMedida'
+                type: array
+                title: Response Listar Unidades
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+  /productos:
+    get:
+      tags:
+      - catalogo
+      summary: Consultar inventario vigente
+      description: producto.consultar · HU-03, HU-04, RF-03, RF-11, RF-19
+      operationId: listar_productos
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: categoria_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Categoria Id
+      - name: estado
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/EstadoInventario'
+          - type: 'null'
+          title: Estado
+      - name: q
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            maxLength: 80
+          - type: 'null'
+          description: Busca en código y nombre
+          title: Q
+        description: Busca en código y nombre
+      - name: incluir_descontinuados
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Incluir Descontinuados
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          description: Página, desde 1
+          default: 1
+          title: Page
+        description: Página, desde 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Tamaño de página, máximo 100
+          default: 20
+          title: Size
+        description: Tamaño de página, máximo 100
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pagina_Producto_'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+    post:
+      tags:
+      - catalogo
+      summary: Crear producto
+      description: producto.crear · HU-02, RF-02, RN-01, RN-02
+      operationId: crear_producto
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoCrear'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /productos/{producto_id}:
+    get:
+      tags:
+      - catalogo
+      summary: Detalle del producto
+      description: producto.consultar · RF-03
+      operationId: obtener_producto
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Producto Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+    patch:
+      tags:
+      - catalogo
+      summary: Actualizar producto
+      description: producto.editar · HU-05, RF-04
+      operationId: actualizar_producto
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Producto Id
+      - name: If-Match
+        in: header
+        required: true
+        schema:
+          type: integer
+          description: Versión actual del producto
+          title: If-Match
+        description: Versión actual del producto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoActualizar'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '412':
+          description: 'VERSION_CONFLICTO: If-Match no coincide con la versión actual'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /productos/{producto_id}/stock-minimo:
+    put:
+      tags:
+      - catalogo
+      summary: Configurar stock mínimo
+      description: producto.configurar_minimo · RF-16, RN-14
+      operationId: configurar_stock_minimo
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Producto Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockMinimo'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /productos/{producto_id}/descontinuar:
+    post:
+      tags:
+      - catalogo
+      summary: Descontinuar producto
+      description: producto.descontinuar · HU-12, RF-05, RN-11, RN-12
+      operationId: descontinuar_producto
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Producto Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /productos/{producto_id}/reactivar:
+    post:
+      tags:
+      - catalogo
+      summary: Revertir la descontinuación
+      description: producto.descontinuar · HU-12
+      operationId: reactivar_producto
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Producto Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+components:
+  schemas:
+    Categoria:
+      properties:
+        id:
+          type: integer
+          title: Id
+        nombre:
+          type: string
+          title: Nombre
+        descripcion:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Descripcion
+        orden:
+          type: integer
+          title: Orden
+          default: 0
+        activa:
+          type: boolean
+          title: Activa
+          default: true
+      type: object
+      required:
+      - id
+      - nombre
+      title: Categoria
+    CategoriaActualizar:
+      properties:
+        nombre:
+          anyOf:
+          - type: string
+            maxLength: 80
+            minLength: 2
+          - type: 'null'
+          title: Nombre
+        descripcion:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Descripcion
+        orden:
+          anyOf:
+          - type: integer
+            minimum: 0.0
+          - type: 'null'
+          title: Orden
+        activa:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Activa
+      type: object
+      title: CategoriaActualizar
+    CategoriaCrear:
+      properties:
+        nombre:
+          type: string
+          maxLength: 80
+          minLength: 2
+          title: Nombre
+        descripcion:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Descripcion
+        orden:
+          type: integer
+          minimum: 0.0
+          title: Orden
+          default: 0
+      type: object
+      required:
+      - nombre
+      title: CategoriaCrear
+    ErrorCampo:
+      properties:
+        campo:
+          title: Campo
+          type: string
+        mensaje:
+          title: Mensaje
+          type: string
+      required:
+      - campo
+      - mensaje
+      title: ErrorCampo
+      type: object
+    EstadoInventario:
+      type: string
+      enum:
+      - DISPONIBLE
+      - BAJO_STOCK
+      - AGOTADO
+      - DESCONTINUADO
+      title: EstadoInventario
+    Magnitud:
+      type: string
+      enum:
+      - CONTEO
+      - VOLUMEN
+      - MASA
+      title: Magnitud
+    Pagina_Producto_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Producto'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        size:
+          type: integer
+          title: Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - size
+      title: Pagina[Producto]
+    Problema:
+      description: Cuerpo `application/problem+json` (RFC 9457) con `code` estable.
+      properties:
+        type:
+          title: Type
+          type: string
+        title:
+          title: Title
+          type: string
+        status:
+          title: Status
+          type: integer
+        detail:
+          title: Detail
+          type: string
+        code:
+          examples:
+          - SIN_PERMISO
+          title: Code
+          type: string
+        errors:
+          default: []
+          items:
+            $ref: '#/components/schemas/ErrorCampo'
+          title: Errors
+          type: array
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      title: Problema
+      type: object
+    Producto:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        codigo:
+          type: string
+          title: Codigo
+        nombre:
+          type: string
+          title: Nombre
+        descripcion:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Descripcion
+        categoria_id:
+          type: integer
+          title: Categoria Id
+        unidad_medida_id:
+          type: integer
+          title: Unidad Medida Id
+        stock_actual:
+          type: string
+          title: Stock Actual
+        stock_minimo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Stock Minimo
+        estado:
+          $ref: '#/components/schemas/EstadoInventario'
+        descontinuado:
+          type: boolean
+          title: Descontinuado
+        version:
+          type: integer
+          title: Version
+          description: Enviar en If-Match al actualizar (bloqueo optimista)
+        creado_en:
+          type: string
+          format: date-time
+          title: Creado En
+        actualizado_en:
+          type: string
+          format: date-time
+          title: Actualizado En
+      type: object
+      required:
+      - id
+      - codigo
+      - nombre
+      - categoria_id
+      - unidad_medida_id
+      - stock_actual
+      - estado
+      - descontinuado
+      - version
+      - creado_en
+      - actualizado_en
+      title: Producto
+    ProductoActualizar:
+      properties:
+        nombre:
+          anyOf:
+          - type: string
+            maxLength: 120
+            minLength: 1
+          - type: 'null'
+          title: Nombre
+        descripcion:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Descripcion
+        categoria_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Categoria Id
+        unidad_medida_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Unidad Medida Id
+      type: object
+      title: ProductoActualizar
+      description: No permite cambiar `codigo` ni `stock_actual`.
+    ProductoCrear:
+      properties:
+        codigo:
+          type: string
+          maxLength: 40
+          minLength: 1
+          title: Codigo
+          description: Único (RN-01)
+        nombre:
+          type: string
+          maxLength: 120
+          minLength: 1
+          title: Nombre
+          description: Obligatorio (RN-02)
+        descripcion:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Descripcion
+        categoria_id:
+          type: integer
+          title: Categoria Id
+        unidad_medida_id:
+          type: integer
+          title: Unidad Medida Id
+        stock_minimo:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+          - type: 'null'
+          title: Stock Minimo
+        cantidad_inicial:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+          - type: 'null'
+          title: Cantidad Inicial
+          description: Se registra como ENTRADA con motivo SALDO_INICIAL
+      type: object
+      required:
+      - codigo
+      - nombre
+      - categoria_id
+      - unidad_medida_id
+      title: ProductoCrear
+    StockMinimo:
+      properties:
+        stock_minimo:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+          - type: 'null'
+          title: Stock Minimo
+          description: null quita el mínimo (RN-14)
+      type: object
+      required:
+      - stock_minimo
+      title: StockMinimo
+    UnidadMedida:
+      properties:
+        id:
+          type: integer
+          title: Id
+        codigo:
+          type: string
+          title: Codigo
+          examples:
+          - ML
+        nombre:
+          type: string
+          title: Nombre
+          examples:
+          - Mililitro
+        magnitud:
+          $ref: '#/components/schemas/Magnitud'
+        admite_decimales:
+          type: boolean
+          title: Admite Decimales
+      type: object
+      required:
+      - id
+      - codigo
+      - nombre
+      - magnitud
+      - admite_decimales
+      title: UnidadMedida
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      description: JWT emitido por POST /api/v1/auth/login
+      scheme: bearer
