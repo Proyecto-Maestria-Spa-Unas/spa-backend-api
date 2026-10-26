@@ -1,0 +1,698 @@
+openapi: 3.1.0
+info:
+  title: S3 · Movimientos · Spa de Uñas
+  version: 1.0.0
+servers:
+- url: /api/v1
+paths:
+  /motivos-movimiento:
+    get:
+      tags:
+      - movimientos
+      summary: Motivos válidos por tipo
+      description: movimiento.consultar · RF-10
+      operationId: listar_motivos
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: tipo
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/TipoMovimiento'
+          - type: 'null'
+          title: Tipo
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MotivoMovimiento'
+                title: Response Listar Motivos
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /movimientos/entradas:
+    post:
+      tags:
+      - movimientos
+      summary: Registrar entrada
+      description: movimiento.registrar_entrada · HU-06, RF-06, RF-09, RF-10
+      operationId: registrar_entrada
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: UUID único por intento
+          title: Idempotency-Key
+        description: UUID único por intento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EntradaRegistrar'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoRegistrado'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /movimientos/salidas:
+    post:
+      tags:
+      - movimientos
+      summary: Registrar salida o consumo
+      description: movimiento.registrar_salida · HU-07, HU-11, RF-07, RF-08, RF-09 · 409 STOCK_INSUFICIENTE
+      operationId: registrar_salida
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: UUID único por intento
+          title: Idempotency-Key
+        description: UUID único por intento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalidaRegistrar'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoRegistrado'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /movimientos:
+    get:
+      tags:
+      - movimientos
+      summary: Historial de movimientos
+      description: 'movimiento.consultar · HU-08, RF-14, RF-15 · Manicurista: solo los propios'
+      operationId: listar_movimientos
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Producto Id
+      - name: tipo
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - $ref: '#/components/schemas/TipoMovimiento'
+          - type: 'null'
+          title: Tipo
+      - name: usuario_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Usuario Id
+      - name: desde
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Desde
+      - name: hasta
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Hasta
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          description: Página, desde 1
+          default: 1
+          title: Page
+        description: Página, desde 1
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Tamaño de página, máximo 100
+          default: 20
+          title: Size
+        description: Tamaño de página, máximo 100
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pagina_Movimiento_'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /movimientos/{movimiento_id}:
+    get:
+      tags:
+      - movimientos
+      summary: Detalle del movimiento
+      description: movimiento.consultar · HU-08
+      operationId: obtener_movimiento
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: movimiento_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Movimiento Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Movimiento'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /movimientos/{movimiento_id}/anulaciones:
+    post:
+      tags:
+      - movimientos
+      summary: Anular movimiento
+      description: movimiento.anular · HU-13, RF-20, RN-13
+      operationId: anular_movimiento
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: movimiento_id
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Movimiento Id
+      - name: Idempotency-Key
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+          description: UUID único por intento
+          title: Idempotency-Key
+        description: UUID único por intento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnulacionRegistrar'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovimientoRegistrado'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+components:
+  schemas:
+    AnulacionRegistrar:
+      properties:
+        motivo:
+          type: string
+          maxLength: 280
+          minLength: 5
+          title: Motivo
+        confirmacion:
+          type: boolean
+          const: true
+          title: Confirmacion
+          description: 'Debe ser true: la anulación revierte el saldo'
+      type: object
+      required:
+      - motivo
+      - confirmacion
+      title: AnulacionRegistrar
+    EntradaRegistrar:
+      properties:
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+        cantidad:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+          title: Cantidad
+          description: 'RN-04: decimales solo si la unidad los admite'
+        motivo_codigo:
+          type: string
+          title: Motivo Codigo
+          examples:
+          - COMPRA
+        costo_unitario:
+          anyOf:
+          - type: number
+            minimum: 0.0
+          - type: string
+          - type: 'null'
+          title: Costo Unitario
+          description: DEC-11
+        observacion:
+          anyOf:
+          - type: string
+            maxLength: 280
+          - type: 'null'
+          title: Observacion
+      type: object
+      required:
+      - producto_id
+      - cantidad
+      - motivo_codigo
+      title: EntradaRegistrar
+    ErrorCampo:
+      properties:
+        campo:
+          title: Campo
+          type: string
+        mensaje:
+          title: Mensaje
+          type: string
+      required:
+      - campo
+      - mensaje
+      title: ErrorCampo
+      type: object
+    MotivoMovimiento:
+      properties:
+        id:
+          type: integer
+          title: Id
+        codigo:
+          type: string
+          title: Codigo
+          examples:
+          - CONSUMO_SERVICIO
+        nombre:
+          type: string
+          title: Nombre
+        aplica_a:
+          $ref: '#/components/schemas/TipoMovimiento'
+      type: object
+      required:
+      - id
+      - codigo
+      - nombre
+      - aplica_a
+      title: MotivoMovimiento
+    Movimiento:
+      properties:
+        id:
+          type: integer
+          title: Id
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+        tipo:
+          $ref: '#/components/schemas/TipoMovimiento'
+        motivo_codigo:
+          type: string
+          title: Motivo Codigo
+        cantidad:
+          type: string
+          title: Cantidad
+        saldo_resultante:
+          type: string
+          title: Saldo Resultante
+        costo_unitario:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Costo Unitario
+        observacion:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Observacion
+        registrado_por:
+          type: string
+          format: uuid
+          title: Registrado Por
+        ocurrido_en:
+          type: string
+          format: date-time
+          title: Ocurrido En
+        movimiento_anulado_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Movimiento Anulado Id
+          description: Solo en ANULACION
+        anulado_por_id:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Anulado Por Id
+          description: Id de la ANULACION que lo revirtió
+      type: object
+      required:
+      - id
+      - producto_id
+      - tipo
+      - motivo_codigo
+      - cantidad
+      - saldo_resultante
+      - registrado_por
+      - ocurrido_en
+      title: Movimiento
+    MovimientoRegistrado:
+      properties:
+        movimiento:
+          $ref: '#/components/schemas/Movimiento'
+        saldo:
+          type: string
+          title: Saldo
+        estado:
+          type: string
+          title: Estado
+          description: Estado del producto tras el movimiento
+          examples:
+          - BAJO_STOCK
+      type: object
+      required:
+      - movimiento
+      - saldo
+      - estado
+      title: MovimientoRegistrado
+    Pagina_Movimiento_:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/Movimiento'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        page:
+          type: integer
+          title: Page
+        size:
+          type: integer
+          title: Size
+      type: object
+      required:
+      - items
+      - total
+      - page
+      - size
+      title: Pagina[Movimiento]
+    Problema:
+      description: Cuerpo `application/problem+json` (RFC 9457) con `code` estable.
+      properties:
+        type:
+          title: Type
+          type: string
+        title:
+          title: Title
+          type: string
+        status:
+          title: Status
+          type: integer
+        detail:
+          title: Detail
+          type: string
+        code:
+          examples:
+          - SIN_PERMISO
+          title: Code
+          type: string
+        errors:
+          default: []
+          items:
+            $ref: '#/components/schemas/ErrorCampo'
+          title: Errors
+          type: array
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      title: Problema
+      type: object
+    SalidaRegistrar:
+      properties:
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+        cantidad:
+          anyOf:
+          - type: number
+            exclusiveMinimum: 0.0
+          - type: string
+          title: Cantidad
+        motivo_codigo:
+          type: string
+          title: Motivo Codigo
+          examples:
+          - CONSUMO_SERVICIO
+        observacion:
+          anyOf:
+          - type: string
+            maxLength: 280
+          - type: 'null'
+          title: Observacion
+      type: object
+      required:
+      - producto_id
+      - cantidad
+      - motivo_codigo
+      title: SalidaRegistrar
+    TipoMovimiento:
+      type: string
+      enum:
+      - ENTRADA
+      - SALIDA
+      - ANULACION
+      title: TipoMovimiento
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      description: JWT emitido por POST /api/v1/auth/login
+      scheme: bearer

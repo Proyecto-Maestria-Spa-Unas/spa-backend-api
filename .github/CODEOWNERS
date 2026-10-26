@@ -1,7 +1,10 @@
-*                             @Proyecto-Maestria-Spa-Unas/equipo-backend
-/app/domain/                  @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-analistas
-/app/infrastructure/db/       @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-datos
-/app/infrastructure/security/ @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/plataforma-admins
-/tests/                       @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-qa
-/Dockerfile                   @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-devops
-/.github/                     @Proyecto-Maestria-Spa-Unas/equipo-devops
+# Revisores que GitHub solicita automáticamente por ruta (el último patrón que coincide gana).
+# Solo se listan equipos con permiso de escritura en este repositorio: GitHub ignora los demás.
+# Los PR de contrato (docs/openapi/) además deben llevar la aprobación de equipo-frontend:
+# la plantilla de PR lo recuerda y QA lo verifica antes de fusionar.
+*                    @Proyecto-Maestria-Spa-Unas/equipo-backend
+/app/compartido/     @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-devops
+/Dockerfile          @Proyecto-Maestria-Spa-Unas/equipo-devops
+/docker-compose.yml  @Proyecto-Maestria-Spa-Unas/equipo-devops
+/docker/             @Proyecto-Maestria-Spa-Unas/equipo-devops
+/.github/            @Proyecto-Maestria-Spa-Unas/equipo-devops
