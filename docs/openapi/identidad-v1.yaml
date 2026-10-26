@@ -49,6 +49,50 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
+  /auth/recuperar:
+    post:
+      tags:
+      - identidad
+      summary: Solicitar recuperación de contraseña
+      description: Público · Supabase Auth envía el correo. Responde 202 aunque el correo no exista (no revela cuentas)
+      operationId: recuperar_contrasena
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarEntrada'
+        required: true
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mensaje'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
   /auth/me:
     get:
       tags:
@@ -496,6 +540,15 @@ components:
       - expires_in
       - usuario
       title: LoginSalida
+    Mensaje:
+      properties:
+        mensaje:
+          type: string
+          title: Mensaje
+      type: object
+      required:
+      - mensaje
+      title: Mensaje
     Pagina_Usuario_:
       properties:
         items:
@@ -553,6 +606,19 @@ components:
       - code
       title: Problema
       type: object
+    RecuperarEntrada:
+      properties:
+        correo:
+          type: string
+          maxLength: 255
+          pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          title: Correo
+          examples:
+          - admin@spa.co
+      type: object
+      required:
+      - correo
+      title: RecuperarEntrada
     Rol:
       properties:
         codigo:

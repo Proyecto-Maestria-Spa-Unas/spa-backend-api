@@ -174,12 +174,12 @@ Monolito modular con **4 servicios de dominio** (ADR-0009). Cada servicio vive e
 | Carpeta | Uso | Responsable |
 |---|---|---|
 | `app/compartido/` | Configuración, conexión a la base, seguridad (JWT y `requiere(permiso)`), errores problem+json, paginación, salud | Plataforma (cambios por PR revisado) |
-| `app/modulos/identidad/` | **S1** · login, usuarios, roles y permisos · 8 endpoints | ivonnelizethmoreno-cloud |
-| `app/modulos/catalogo/` | **S2** · productos, categorías, unidades, stock mínimo · 11 endpoints | Damx0611 |
-| `app/modulos/movimientos/` | **S3** · entradas, salidas, historial, anulación · 6 endpoints | Damx0611 |
-| `app/modulos/analitica/` | **S4** · alertas, tablero, consumo, cobertura, exportación · 6 endpoints | ivonnelizethmoreno-cloud |
+| `app/modulos/identidad/` | **S1** · login, recuperación de contraseña, usuarios, roles · 9 endpoints | ivonnelizethmoreno-cloud (recuperación: Estefa44445) |
+| `app/modulos/catalogo/` | **S2** · productos, categorías, unidades, stock mínimo, proveedores georreferenciados · 14 endpoints | Damx0611 (proveedores: Gleidy725) |
+| `app/modulos/movimientos/` | **S3** · entradas, salidas, historial, anulación · 6 endpoints | Damx0611 (motivos: Gleidy725) |
+| `app/modulos/analitica/` | **S4** · alertas, tablero, kardex valorizado, consumo, cobertura, mapa de proveedores, exportación · 8 endpoints | ivonnelizethmoreno-cloud (alertas, mapa y exportación: Estefa44445) |
 | `docs/openapi/` | Contrato de cada servicio (se genera desde el código) | ivonnelizethmoreno-cloud; aprueba equipo-frontend |
-| `tests/contrato/` | Seguridad y existencia de los 31 endpoints | Todos |
+| `tests/contrato/` | Seguridad y existencia de los 37 endpoints | Todos |
 | `tests/unit/<servicio>/` | Dominio y casos de uso, sin base | Dueño del servicio |
 | `tests/integration/<servicio>/` | Contra PostGIS (`docker compose up -d db`) | Dueño del servicio |
 | `docker-compose.yml`, `docker/` | Entorno local: PostGIS con el esquema de `spa-database` + API | Plataforma |

@@ -77,3 +77,39 @@ class ProductoActualizar(BaseModel):
 
 class StockMinimo(BaseModel):
     stock_minimo: Cantidad | None = Field(ge=0, description="null quita el mínimo (RN-14)")
+
+
+class Ubicacion(BaseModel):
+    """Coordenadas WGS84 (EPSG:4326). En la base: geography(Point, 4326) con índice GIST."""
+
+    latitud: float = Field(ge=-90, le=90, examples=[4.6533])
+    longitud: float = Field(ge=-180, le=180, examples=[-74.0836])
+
+
+class Proveedor(BaseModel):
+    id: UUID
+    nombre: str
+    nit: str = Field(examples=["900123456-7"])
+    telefono: str | None = None
+    correo: str | None = None
+    direccion: str | None = None
+    ubicacion: Ubicacion | None = None
+    activo: bool = True
+
+
+class ProveedorCrear(BaseModel):
+    nombre: str = Field(min_length=2, max_length=120)
+    nit: str = Field(pattern=r"^[0-9]{6,10}-[0-9]$", description="NIT colombiano con dígito de verificación")
+    telefono: str | None = Field(default=None, max_length=20)
+    correo: str | None = Field(default=None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=255)
+    direccion: str | None = Field(default=None, max_length=200)
+    ubicacion: Ubicacion | None = None
+
+
+class ProveedorActualizar(BaseModel):
+    nombre: str | None = Field(default=None, min_length=2, max_length=120)
+    telefono: str | None = Field(default=None, max_length=20)
+    correo: str | None = Field(default=None, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$", max_length=255)
+    direccion: str | None = Field(default=None, max_length=200)
+    ubicacion: Ubicacion | None = None
+    activo: bool | None = None

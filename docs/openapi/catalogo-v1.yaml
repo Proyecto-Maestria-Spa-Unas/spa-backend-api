@@ -661,6 +661,168 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
+  /proveedores:
+    get:
+      tags:
+      - catalogo
+      summary: Listar proveedores
+      description: producto.consultar · reposición (RF-17)
+      operationId: listar_proveedores
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: incluir_inactivos
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Incluir Inactivos
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Proveedor'
+                title: Response Listar Proveedores
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+    post:
+      tags:
+      - catalogo
+      summary: Registrar proveedor con su ubicación
+      description: catalogo.administrar · NIT único
+      operationId: crear_proveedor
+      security:
+      - HTTPBearer: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProveedorCrear'
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proveedor'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '409':
+          description: Conflicto de regla de negocio (ver `code`)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /proveedores/{proveedor_id}:
+    patch:
+      tags:
+      - catalogo
+      summary: Actualizar o desactivar proveedor (no existe DELETE)
+      description: catalogo.administrar
+      operationId: actualizar_proveedor
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: proveedor_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Proveedor Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProveedorActualizar'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Proveedor'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
 components:
   schemas:
     Categoria:
@@ -960,6 +1122,128 @@ components:
       - categoria_id
       - unidad_medida_id
       title: ProductoCrear
+    Proveedor:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        nombre:
+          type: string
+          title: Nombre
+        nit:
+          type: string
+          title: Nit
+          examples:
+          - 900123456-7
+        telefono:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Telefono
+        correo:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Correo
+        direccion:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Direccion
+        ubicacion:
+          anyOf:
+          - $ref: '#/components/schemas/Ubicacion'
+          - type: 'null'
+        activo:
+          type: boolean
+          title: Activo
+          default: true
+      type: object
+      required:
+      - id
+      - nombre
+      - nit
+      title: Proveedor
+    ProveedorActualizar:
+      properties:
+        nombre:
+          anyOf:
+          - type: string
+            maxLength: 120
+            minLength: 2
+          - type: 'null'
+          title: Nombre
+        telefono:
+          anyOf:
+          - type: string
+            maxLength: 20
+          - type: 'null'
+          title: Telefono
+        correo:
+          anyOf:
+          - type: string
+            maxLength: 255
+            pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          - type: 'null'
+          title: Correo
+        direccion:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Direccion
+        ubicacion:
+          anyOf:
+          - $ref: '#/components/schemas/Ubicacion'
+          - type: 'null'
+        activo:
+          anyOf:
+          - type: boolean
+          - type: 'null'
+          title: Activo
+      type: object
+      title: ProveedorActualizar
+    ProveedorCrear:
+      properties:
+        nombre:
+          type: string
+          maxLength: 120
+          minLength: 2
+          title: Nombre
+        nit:
+          type: string
+          pattern: ^[0-9]{6,10}-[0-9]$
+          title: Nit
+          description: NIT colombiano con dígito de verificación
+        telefono:
+          anyOf:
+          - type: string
+            maxLength: 20
+          - type: 'null'
+          title: Telefono
+        correo:
+          anyOf:
+          - type: string
+            maxLength: 255
+            pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
+          - type: 'null'
+          title: Correo
+        direccion:
+          anyOf:
+          - type: string
+            maxLength: 200
+          - type: 'null'
+          title: Direccion
+        ubicacion:
+          anyOf:
+          - $ref: '#/components/schemas/Ubicacion'
+          - type: 'null'
+      type: object
+      required:
+      - nombre
+      - nit
+      title: ProveedorCrear
     StockMinimo:
       properties:
         stock_minimo:
@@ -974,6 +1258,28 @@ components:
       required:
       - stock_minimo
       title: StockMinimo
+    Ubicacion:
+      properties:
+        latitud:
+          type: number
+          maximum: 90.0
+          minimum: -90.0
+          title: Latitud
+          examples:
+          - 4.6533
+        longitud:
+          type: number
+          maximum: 180.0
+          minimum: -180.0
+          title: Longitud
+          examples:
+          - -74.0836
+      type: object
+      required:
+      - latitud
+      - longitud
+      title: Ubicacion
+      description: 'Coordenadas WGS84 (EPSG:4326). En la base: geography(Point, 4326) con índice GIST.'
     UnidadMedida:
       properties:
         id:
