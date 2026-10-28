@@ -514,6 +514,8 @@ components:
           maxLength: 128
           minLength: 8
           title: Contrasena
+          examples:
+          - Clave-Segura-2026
       type: object
       required:
       - correo
@@ -524,6 +526,9 @@ components:
         access_token:
           type: string
           title: Access Token
+          description: JWT HS256
+          examples:
+          - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         token_type:
           type: string
           title: Token Type
@@ -532,6 +537,8 @@ components:
           type: integer
           title: Expires In
           description: Segundos de vigencia del token
+          examples:
+          - 1800
         usuario:
           $ref: '#/components/schemas/UsuarioSesion'
       type: object
@@ -545,6 +552,8 @@ components:
         mensaje:
           type: string
           title: Mensaje
+          examples:
+          - Si el correo está registrado, recibirá un enlace para restablecer la contraseña.
       type: object
       required:
       - mensaje
@@ -614,7 +623,7 @@ components:
           pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
           title: Correo
           examples:
-          - admin@spa.co
+          - manicurista@spa.co
       type: object
       required:
       - correo
@@ -626,11 +635,18 @@ components:
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Administrador
         permisos:
           items:
             type: string
           type: array
           title: Permisos
+          examples:
+          - - producto.consultar
+            - producto.crear
+            - movimiento.registrar_salida
+            - usuario.gestionar
       type: object
       required:
       - codigo
@@ -643,17 +659,26 @@ components:
           type: string
           format: uuid
           title: Id
+          examples:
+          - a0000000-0000-4000-8000-000000000001
         correo:
           type: string
           title: Correo
+          examples:
+          - manicurista@spa.co
         nombre_completo:
           type: string
           title: Nombre Completo
+          examples:
+          - Diana Pérez
         rol:
           $ref: '#/components/schemas/CodigoRol'
         activo:
           type: boolean
           title: Activo
+          description: 'Los usuarios no se borran: se desactivan (HU-09)'
+          examples:
+          - true
         creado_en:
           type: string
           format: date-time
@@ -676,6 +701,8 @@ components:
             minLength: 3
           - type: 'null'
           title: Nombre Completo
+          examples:
+          - Camila Rojas Díaz
         rol:
           anyOf:
           - $ref: '#/components/schemas/CodigoRol'
@@ -690,12 +717,14 @@ components:
           pattern: ^[^@\s]+@[^@\s]+\.[^@\s]+$
           title: Correo
           examples:
-          - admin@spa.co
+          - nueva@spa.co
         nombre_completo:
           type: string
           maxLength: 120
           minLength: 3
           title: Nombre Completo
+          examples:
+          - Camila Rojas
         rol:
           $ref: '#/components/schemas/CodigoRol'
         contrasena_temporal:
@@ -703,6 +732,9 @@ components:
           maxLength: 128
           minLength: 8
           title: Contrasena Temporal
+          description: La usuaria la cambia al ingresar
+          examples:
+          - Temporal-2026
       type: object
       required:
       - correo
@@ -715,6 +747,9 @@ components:
         activo:
           type: boolean
           title: Activo
+          description: false desactiva la cuenta; no existe DELETE
+          examples:
+          - false
       type: object
       required:
       - activo
@@ -725,12 +760,18 @@ components:
           type: string
           format: uuid
           title: Id
+          examples:
+          - a0000000-0000-4000-8000-000000000001
         correo:
           type: string
           title: Correo
+          examples:
+          - admin@spa.co
         nombre_completo:
           type: string
           title: Nombre Completo
+          examples:
+          - Laura Gómez
         rol:
           $ref: '#/components/schemas/CodigoRol'
         permisos:
@@ -738,6 +779,12 @@ components:
             type: string
           type: array
           title: Permisos
+          description: Permisos del rol; el frontend oculta lo que no esté aquí
+          examples:
+          - - producto.consultar
+            - producto.crear
+            - movimiento.registrar_salida
+            - usuario.gestionar
       type: object
       required:
       - id
