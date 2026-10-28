@@ -456,24 +456,36 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         stock_actual:
           type: string
           title: Stock Actual
+          examples:
+          - '350.000'
         stock_minimo:
           type: string
           title: Stock Minimo
+          examples:
+          - '500.000'
         estado:
           $ref: '#/components/schemas/EstadoAlerta'
         faltante:
           type: string
           title: Faltante
           description: stock_minimo − stock_actual
+          examples:
+          - '150.000'
       type: object
       required:
       - producto_id
@@ -490,24 +502,37 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         stock_actual:
           type: string
           title: Stock Actual
+          examples:
+          - '350.000'
         consumo_diario_promedio:
           type: string
           title: Consumo Diario Promedio
+          description: Promedio de los últimos 30 días
+          examples:
+          - '5.000'
         dias_cobertura:
           anyOf:
           - type: string
           - type: 'null'
           title: Dias Cobertura
           description: null si no hubo consumo en 30 días
+          examples:
+          - '70.0'
       type: object
       required:
       - producto_id
@@ -540,9 +565,13 @@ components:
           type: string
           title: Clave
           description: Categoría, código de producto o fecha, según agrupar_por
+          examples:
+          - Removedores
         cantidad:
           type: string
           title: Cantidad
+          examples:
+          - '150.000'
       type: object
       required:
       - clave
@@ -583,6 +612,9 @@ components:
           minItems: 2
           title: Coordinates
           description: '[longitud, latitud] (EPSG:4326)'
+          examples:
+          - - -74.0645
+            - 4.6484
       type: object
       required:
       - coordinates
@@ -593,12 +625,18 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         metodo:
           type: string
           const: PROMEDIO_PONDERADO
@@ -612,9 +650,13 @@ components:
         saldo_final:
           type: string
           title: Saldo Final
+          examples:
+          - '500.000'
         valor_final:
           type: string
           title: Valor Final
+          examples:
+          - '19600.0000'
       type: object
       required:
       - producto_id
@@ -631,6 +673,8 @@ components:
           type: string
           format: date-time
           title: Ocurrido En
+          examples:
+          - '2026-10-28T09:00:00-05:00'
         tipo:
           type: string
           title: Tipo
@@ -639,28 +683,46 @@ components:
         motivo_codigo:
           type: string
           title: Motivo Codigo
+          examples:
+          - COMPRA
         cantidad:
           type: string
           title: Cantidad
+          examples:
+          - '150.000'
         costo_unitario:
           anyOf:
           - type: string
           - type: 'null'
           title: Costo Unitario
+          description: null en salidas
+          examples:
+          - '42.0000'
         costo_total:
           anyOf:
           - type: string
           - type: 'null'
           title: Costo Total
+          description: cantidad × costo_unitario
+          examples:
+          - '6300.0000'
         saldo:
           type: string
           title: Saldo
+          examples:
+          - '500.000'
         costo_promedio:
           type: string
           title: Costo Promedio
+          description: (saldo anterior × promedio + entrada) ÷ saldo
+          examples:
+          - '39.2000'
         valor_saldo:
           type: string
           title: Valor Saldo
+          description: saldo × costo_promedio
+          examples:
+          - '19600.0000'
       type: object
       required:
       - ocurrido_en
@@ -713,15 +775,24 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         consumo:
           type: string
           title: Consumo
+          description: Salidas de los últimos 30 días
+          examples:
+          - '150.000'
       type: object
       required:
       - producto_id
@@ -735,17 +806,26 @@ components:
           type: string
           format: uuid
           title: Proveedor Id
+          examples:
+          - f0000000-0000-4000-8000-000000000001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Distribuidora Belleza Total
         telefono:
           anyOf:
           - type: string
           - type: 'null'
           title: Telefono
+          examples:
+          - '6015550101'
         distancia_km:
           type: string
           title: Distancia Km
+          description: Distancia geodésica desde el punto consultado
+          examples:
+          - '0.19'
       type: object
       required:
       - proveedor_id
@@ -774,12 +854,19 @@ components:
         bajo_stock:
           type: integer
           title: Bajo Stock
+          examples:
+          - 5
         agotado:
           type: integer
           title: Agotado
+          examples:
+          - 2
         total:
           type: integer
           title: Total
+          description: Valor del contador del menú
+          examples:
+          - 7
       type: object
       required:
       - bajo_stock
@@ -802,10 +889,14 @@ components:
           - type: string
           - type: 'null'
           title: Valor Inventario
-          description: null mientras DEC-11 no se decida
+          description: Σ stock_actual × costo_promedio (DEC-11); null si no hay costos registrados
+          examples:
+          - '4250000.0000'
         consumo_30_dias:
           type: string
           title: Consumo 30 Dias
+          examples:
+          - '1280.000'
         top_rotacion:
           items:
             $ref: '#/components/schemas/ProductoRotacion'

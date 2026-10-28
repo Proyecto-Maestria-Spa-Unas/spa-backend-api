@@ -830,21 +830,31 @@ components:
         id:
           type: integer
           title: Id
+          examples:
+          - 1
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Esmaltes
         descripcion:
           anyOf:
           - type: string
           - type: 'null'
           title: Descripcion
+          examples:
+          - Esmaltes tradicionales y semipermanentes
         orden:
           type: integer
           title: Orden
+          description: Posición en los filtros del frontend
           default: 0
+          examples:
+          - 1
         activa:
           type: boolean
           title: Activa
+          description: Las inactivas no aparecen en GET /categorias
           default: true
       type: object
       required:
@@ -886,17 +896,23 @@ components:
           maxLength: 80
           minLength: 2
           title: Nombre
+          examples:
+          - Removedores
         descripcion:
           anyOf:
           - type: string
             maxLength: 200
           - type: 'null'
           title: Descripcion
+          examples:
+          - Acetona y removedores sin acetona
         orden:
           type: integer
           minimum: 0.0
           title: Orden
           default: 0
+          examples:
+          - 2
       type: object
       required:
       - nombre
@@ -992,36 +1008,57 @@ components:
           type: string
           format: uuid
           title: Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         descripcion:
           anyOf:
           - type: string
           - type: 'null'
           title: Descripcion
+          examples:
+          - Presentación de galón
         categoria_id:
           type: integer
           title: Categoria Id
+          examples:
+          - 2
         unidad_medida_id:
           type: integer
           title: Unidad Medida Id
+          examples:
+          - 2
         stock_actual:
           type: string
           title: Stock Actual
+          description: Solo cambia por movimientos (trigger de S0)
+          examples:
+          - '350.000'
         stock_minimo:
           anyOf:
           - type: string
           - type: 'null'
           title: Stock Minimo
+          description: null = sin alerta (RN-14)
+          examples:
+          - '500.000'
         estado:
           $ref: '#/components/schemas/EstadoInventario'
+          description: Calculado por la base (RN-08..RN-11)
         descontinuado:
           type: boolean
           title: Descontinuado
+          examples:
+          - false
         version:
           type: integer
           title: Version
@@ -1057,6 +1094,8 @@ components:
             minLength: 1
           - type: 'null'
           title: Nombre
+          examples:
+          - Esmalte nude 15 ml mate
         descripcion:
           anyOf:
           - type: string
@@ -1067,6 +1106,8 @@ components:
           - type: integer
           - type: 'null'
           title: Categoria Id
+          examples:
+          - 1
         unidad_medida_id:
           anyOf:
           - type: integer
@@ -1083,23 +1124,33 @@ components:
           minLength: 1
           title: Codigo
           description: Único (RN-01)
+          examples:
+          - ESM-002
         nombre:
           type: string
           maxLength: 120
           minLength: 1
           title: Nombre
           description: Obligatorio (RN-02)
+          examples:
+          - Esmalte nude 15 ml
         descripcion:
           anyOf:
           - type: string
           - type: 'null'
           title: Descripcion
+          examples:
+          - Acabado brillante
         categoria_id:
           type: integer
           title: Categoria Id
+          examples:
+          - 1
         unidad_medida_id:
           type: integer
           title: Unidad Medida Id
+          examples:
+          - 1
         stock_minimo:
           anyOf:
           - type: number
@@ -1107,6 +1158,8 @@ components:
           - type: string
           - type: 'null'
           title: Stock Minimo
+          examples:
+          - '6'
         cantidad_inicial:
           anyOf:
           - type: number
@@ -1115,6 +1168,8 @@ components:
           - type: 'null'
           title: Cantidad Inicial
           description: Se registra como ENTRADA con motivo SALDO_INICIAL
+          examples:
+          - '24'
       type: object
       required:
       - codigo
@@ -1131,6 +1186,8 @@ components:
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Distribuidora Belleza Total
         nit:
           type: string
           title: Nit
@@ -1141,16 +1198,22 @@ components:
           - type: string
           - type: 'null'
           title: Telefono
+          examples:
+          - '6015550101'
         correo:
           anyOf:
           - type: string
           - type: 'null'
           title: Correo
+          examples:
+          - ventas@bellezatotal.co
         direccion:
           anyOf:
           - type: string
           - type: 'null'
           title: Direccion
+          examples:
+          - 'Cl. 63 #13-20, Chapinero, Bogotá'
         ubicacion:
           anyOf:
           - $ref: '#/components/schemas/Ubicacion'
@@ -1254,6 +1317,8 @@ components:
           - type: 'null'
           title: Stock Minimo
           description: null quita el mínimo (RN-14)
+          examples:
+          - '10'
       type: object
       required:
       - stock_minimo
@@ -1285,6 +1350,8 @@ components:
         id:
           type: integer
           title: Id
+          examples:
+          - 2
         codigo:
           type: string
           title: Codigo
@@ -1300,6 +1367,7 @@ components:
         admite_decimales:
           type: boolean
           title: Admite Decimales
+          description: 'RN-04: si es false, las cantidades deben ser enteras'
       type: object
       required:
       - id
