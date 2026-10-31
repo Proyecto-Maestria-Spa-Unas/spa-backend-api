@@ -1,5 +1,5 @@
 
-"""Adaptador SQLAlchemy para consultas del catálogo."""
+"""Adaptador SQLAlchemy para las consultas del catálogo."""
 
 from decimal import Decimal
 from uuid import UUID
@@ -44,10 +44,18 @@ class CatalogoRepositorySQL:
     def obtener_producto(self, producto_id: UUID) -> Producto | None:
         consulta = text("""
             SELECT
-                id, codigo, nombre, descripcion,
-                categoria_id, unidad_medida_id,
-                stock_actual, stock_minimo, descontinuado,
-                version, creado_en, actualizado_en
+                id,
+                codigo,
+                nombre,
+                descripcion,
+                categoria_id,
+                unidad_medida_id,
+                stock_actual,
+                stock_minimo,
+                descontinuado,
+                version,
+                creado_en,
+                actualizado_en
             FROM inventario.producto
             WHERE id = :producto_id
         """)
@@ -75,33 +83,34 @@ class CatalogoRepositorySQL:
         offset: int,
         limite: int,
     ) -> tuple[list[Producto], int]:
-
-        filtros = """
-            WHERE (:categoria_id IS NULL OR categoria_id = :categoria_id)
-              AND (:estado IS NULL OR estado = :estado)
-              AND (
-                    :q IS NULL
-                    OR codigo::text ILIKE :q
-                    OR nombre ILIKE :q
-                  )
-              AND (
-                    :incluir_descontinuados
-                    OR descontinuado = FALSE
-                  )
-        """
-
         parametros = {
             "categoria_id": categoria_id,
             "estado": estado.value if estado is not None else None,
             "q": f"%{q.strip()}%" if q and q.strip() else None,
             "incluir_descontinuados": incluir_descontinuados,
-            "offset": offset,
-            "limite": limite,
         }
 
-        consulta_total = text(
-            "SELECT COUNT(*) FROM inventario.producto " + filtros
-        )
+        consulta_total = text("""
+            SELECT COUNT(*)
+            FROM inventario.producto
+            WHERE (
+                CAST(:categoria_id AS INTEGER) IS NULL
+                OR categoria_id = :categoria_id
+            )
+            AND (
+                CAST(:estado AS TEXT) IS NULL
+                OR estado = :estado
+            )
+            AND (
+                CAST(:q AS TEXT) IS NULL
+                OR codigo::text ILIKE :q
+                OR nombre ILIKE :q
+            )
+            AND (
+                :incluir_descontinuados
+                OR descontinuado = FALSE
+            )
+        """)
 
         total = self._session.execute(
             consulta_total,
@@ -110,20 +119,51 @@ class CatalogoRepositorySQL:
 
         consulta_productos = text("""
             SELECT
-                id, codigo, nombre, descripcion,
-                categoria_id, unidad_medida_id,
-                stock_actual, stock_minimo, descontinuado,
-                version, creado_en, actualizado_en
+                id,
+                codigo,
+                nombre,
+                descripcion,
+                categoria_id,
+                unidad_medida_id,
+                stock_actual,
+                stock_minimo,
+                descontinuado,
+                version,
+                creado_en,
+                actualizado_en
             FROM inventario.producto
-        """ + filtros + """
+            WHERE (
+                CAST(:categoria_id AS INTEGER) IS NULL
+                OR categoria_id = :categoria_id
+            )
+            AND (
+                CAST(:estado AS TEXT) IS NULL
+                OR estado = :estado
+            )
+            AND (
+                CAST(:q AS TEXT) IS NULL
+                OR codigo::text ILIKE :q
+                OR nombre ILIKE :q
+            )
+            AND (
+                :incluir_descontinuados
+                OR descontinuado = FALSE
+            )
             ORDER BY nombre, codigo
-            LIMIT :limite OFFSET :offset
+            LIMIT :limite
+            OFFSET :offset
         """)
+
+        parametros_consulta = {
+            **parametros,
+            "limite": limite,
+            "offset": offset,
+        }
 
         filas = (
             self._session.execute(
                 consulta_productos,
-                parametros,
+                parametros_consulta,
             )
             .mappings()
             .all()
