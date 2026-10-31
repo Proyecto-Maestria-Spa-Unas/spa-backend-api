@@ -17,6 +17,8 @@ from app.compartido.seguridad import Principal, UsuarioActual, requiere
 from app.modulos.identidad.api.esquemas import (
     LoginEntrada,
     LoginSalida,
+    Mensaje,
+    RecuperarEntrada,
     Rol,
     Usuario,
     UsuarioActualizar,
@@ -38,6 +40,18 @@ Gestor = Annotated[Principal, Depends(requiere(Permiso.USUARIO_GESTIONAR))]
     responses=respuestas(),
 )
 def login(datos: LoginEntrada) -> LoginSalida:
+    raise NoImplementado()
+
+
+@router.post(
+    "/auth/recuperar",
+    response_model=Mensaje,
+    status_code=202,
+    summary="Solicitar recuperación de contraseña",
+    description="Público · Supabase Auth envía el correo. Responde 202 aunque el correo no exista (no revela cuentas)",
+    responses=respuestas(),
+)
+def recuperar_contrasena(datos: RecuperarEntrada) -> Mensaje:
     raise NoImplementado()
 
 

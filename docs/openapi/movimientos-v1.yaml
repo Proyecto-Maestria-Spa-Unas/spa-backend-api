@@ -435,6 +435,8 @@ components:
           maxLength: 280
           minLength: 5
           title: Motivo
+          examples:
+          - Registro duplicado por error de digitación
         confirmacion:
           type: boolean
           const: true
@@ -451,6 +453,8 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         cantidad:
           anyOf:
           - type: number
@@ -458,9 +462,12 @@ components:
           - type: string
           title: Cantidad
           description: 'RN-04: decimales solo si la unidad los admite'
+          examples:
+          - '500'
         motivo_codigo:
           type: string
           title: Motivo Codigo
+          description: COMPRA, AJUSTE_CONTEO o SALDO_INICIAL
           examples:
           - COMPRA
         costo_unitario:
@@ -470,13 +477,26 @@ components:
           - type: string
           - type: 'null'
           title: Costo Unitario
-          description: DEC-11
+          description: 'Obligatorio en COMPRA: alimenta el costo promedio ponderado (DEC-11)'
+          examples:
+          - '38.50'
+        proveedor_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proveedor Id
+          description: Proveedor de la compra
+          examples:
+          - f0000000-0000-4000-8000-000000000001
         observacion:
           anyOf:
           - type: string
             maxLength: 280
           - type: 'null'
           title: Observacion
+          examples:
+          - Factura FV-1023
       type: object
       required:
       - producto_id
@@ -501,6 +521,8 @@ components:
         id:
           type: integer
           title: Id
+          examples:
+          - 3
         codigo:
           type: string
           title: Codigo
@@ -509,8 +531,11 @@ components:
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Consumo en servicio
         aplica_a:
           $ref: '#/components/schemas/TipoMovimiento'
+          description: Tipo de movimiento en el que se puede usar este motivo
       type: object
       required:
       - id
@@ -523,39 +548,73 @@ components:
         id:
           type: integer
           title: Id
+          examples:
+          - 42
         producto_id:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         tipo:
           $ref: '#/components/schemas/TipoMovimiento'
         motivo_codigo:
           type: string
           title: Motivo Codigo
+          examples:
+          - CONSUMO_SERVICIO
         cantidad:
           type: string
           title: Cantidad
+          examples:
+          - '15.000'
         saldo_resultante:
           type: string
           title: Saldo Resultante
+          description: Stock del producto después de este movimiento
+          examples:
+          - '335.000'
         costo_unitario:
           anyOf:
           - type: string
           - type: 'null'
           title: Costo Unitario
+          examples:
+          - null
+        costo_promedio_resultante:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Costo Promedio Resultante
+          description: Kardex valorizado (DEC-11)
+          examples:
+          - '39.2000'
+        proveedor_id:
+          anyOf:
+          - type: string
+            format: uuid
+          - type: 'null'
+          title: Proveedor Id
         observacion:
           anyOf:
           - type: string
           - type: 'null'
           title: Observacion
+          examples:
+          - Retiro de semipermanente, cabina 2
         registrado_por:
           type: string
           format: uuid
           title: Registrado Por
+          description: Usuario de la sesión (RN-07)
+          examples:
+          - a0000000-0000-4000-8000-000000000002
         ocurrido_en:
           type: string
           format: date-time
           title: Ocurrido En
+          examples:
+          - '2026-10-28T15:30:00-05:00'
         movimiento_anulado_id:
           anyOf:
           - type: integer
@@ -586,6 +645,8 @@ components:
         saldo:
           type: string
           title: Saldo
+          examples:
+          - '335.000'
         estado:
           type: string
           title: Estado
@@ -661,15 +722,21 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         cantidad:
           anyOf:
           - type: number
             exclusiveMinimum: 0.0
           - type: string
           title: Cantidad
+          description: 409 STOCK_INSUFICIENTE si supera el disponible
+          examples:
+          - '15'
         motivo_codigo:
           type: string
           title: Motivo Codigo
+          description: CONSUMO_SERVICIO, MERMA o VENCIMIENTO
           examples:
           - CONSUMO_SERVICIO
         observacion:
@@ -678,6 +745,8 @@ components:
             maxLength: 280
           - type: 'null'
           title: Observacion
+          examples:
+          - Retiro de semipermanente, cabina 2
       type: object
       required:
       - producto_id
