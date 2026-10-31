@@ -4,18 +4,19 @@
 
 Autenticación, emisión del JWT, usuarios, roles y permisos (HU-01, HU-09 · RF-01, RF-13 · RNF-07).
 
-## Endpoints (8)
+## Endpoints (9)
 
-| Método | Ruta | Permiso | Sprint |
+| Método | Ruta | Permiso | Entrega · responsable |
 |---|---|---|---|
-| POST | `/auth/login` | Público | 2 |
-| GET | `/auth/me` | Autenticado | 2 |
-| GET | `/usuarios` | usuario.gestionar | 2 |
-| POST | `/usuarios` | usuario.gestionar | 2 |
-| GET | `/usuarios/{id}` | usuario.gestionar | 2 |
-| PATCH | `/usuarios/{id}` | usuario.gestionar | 2 |
-| PATCH | `/usuarios/{id}/estado` | usuario.gestionar | 2 |
-| GET | `/roles` | usuario.gestionar | 2 |
+| POST | `/auth/login` | Público | Entrega 1 · B5 |
+| POST | `/auth/recuperar` | Público · **Estefa44445 (X3)** | Entrega 2 |
+| GET | `/auth/me` | Autenticado | Entrega 1 |
+| GET | `/usuarios` | usuario.gestionar | Entrega 1 |
+| POST | `/usuarios` | usuario.gestionar | Entrega 1 |
+| GET | `/usuarios/{id}` | usuario.gestionar | Entrega 1 |
+| PATCH | `/usuarios/{id}` | usuario.gestionar | Entrega 1 |
+| PATCH | `/usuarios/{id}/estado` | usuario.gestionar | Entrega 1 |
+| GET | `/roles` | usuario.gestionar | Entrega 1 |
 
 ## Dónde va cada cosa
 
@@ -32,8 +33,11 @@ Autenticación, emisión del JWT, usuarios, roles y permisos (HU-01, HU-09 · RF
 
 ## Tareas
 
-* **Sprint 1 · B2:** revisar y completar el borrador de los 4 contratos en `docs/openapi/` (ejemplos, descripciones) y obtener la aprobación de equipo-frontend en el PR de contrato.
-* **Sprint 2:** los 8 endpoints. Desde aquí todos los endpoints de la API exigen JWT real.
+Las fechas exactas están en cada issue (etiqueta `plan-entregas`).
+
+* **B2:** revisar y completar los 4 contratos y obtener la aprobación de frontend.
+* **B5:** `/auth/login` y `/auth/me` con Supabase Auth. **B6:** usuarios y roles.
+* **X3 (Estefa44445):** `/auth/recuperar` con `resetPasswordForEmail` de Supabase Auth y su pantalla.
 
 ## Definición de terminado
 

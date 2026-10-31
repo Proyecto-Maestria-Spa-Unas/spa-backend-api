@@ -303,6 +303,144 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
+  /analitica/kardex:
+    get:
+      tags:
+      - analitica
+      summary: Kardex valorizado de un producto (costo promedio ponderado)
+      description: analitica.consultar · RF-14, DEC-11
+      operationId: kardex
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: producto_id
+        in: query
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Producto Id
+      - name: desde
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Desde
+      - name: hasta
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            format: date
+          - type: 'null'
+          title: Hasta
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kardex'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '404':
+          description: RECURSO_NO_EXISTE
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+  /analitica/proveedores-cercanos:
+    get:
+      tags:
+      - analitica
+      summary: Proveedores dentro de un radio (PostGIS ST_DWithin) en GeoJSON
+      description: alerta.consultar · reposición de productos en alerta (RF-17)
+      operationId: proveedores_cercanos
+      security:
+      - HTTPBearer: []
+      parameters:
+      - name: latitud
+        in: query
+        required: true
+        schema:
+          type: number
+          maximum: 90
+          minimum: -90
+          title: Latitud
+      - name: longitud
+        in: query
+        required: true
+        schema:
+          type: number
+          maximum: 180
+          minimum: -180
+          title: Longitud
+      - name: radio_km
+        in: query
+        required: false
+        schema:
+          type: number
+          maximum: 100
+          exclusiveMinimum: 0
+          default: 10
+          title: Radio Km
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColeccionProveedores'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '501':
+          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
 components:
   schemas:
     AgrupacionConsumo:
@@ -318,24 +456,36 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         stock_actual:
           type: string
           title: Stock Actual
+          examples:
+          - '350.000'
         stock_minimo:
           type: string
           title: Stock Minimo
+          examples:
+          - '500.000'
         estado:
           $ref: '#/components/schemas/EstadoAlerta'
         faltante:
           type: string
           title: Faltante
           description: stock_minimo − stock_actual
+          examples:
+          - '150.000'
       type: object
       required:
       - producto_id
@@ -352,24 +502,37 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         stock_actual:
           type: string
           title: Stock Actual
+          examples:
+          - '350.000'
         consumo_diario_promedio:
           type: string
           title: Consumo Diario Promedio
+          description: Promedio de los últimos 30 días
+          examples:
+          - '5.000'
         dias_cobertura:
           anyOf:
           - type: string
           - type: 'null'
           title: Dias Cobertura
           description: null si no hubo consumo en 30 días
+          examples:
+          - '70.0'
       type: object
       required:
       - producto_id
@@ -379,15 +542,36 @@ components:
       - consumo_diario_promedio
       - dias_cobertura
       title: Cobertura
+    ColeccionProveedores:
+      properties:
+        type:
+          type: string
+          const: FeatureCollection
+          title: Type
+          default: FeatureCollection
+        features:
+          items:
+            $ref: '#/components/schemas/ProveedorCercano'
+          type: array
+          title: Features
+      type: object
+      required:
+      - features
+      title: ColeccionProveedores
+      description: GeoJSON (RFC 7946) listo para Leaflet, QGIS o ArcGIS.
     ConsumoItem:
       properties:
         clave:
           type: string
           title: Clave
           description: Categoría, código de producto o fecha, según agrupar_por
+          examples:
+          - Removedores
         cantidad:
           type: string
           title: Cantidad
+          examples:
+          - '150.000'
       type: object
       required:
       - clave
@@ -412,6 +596,145 @@ components:
       - BAJO_STOCK
       - AGOTADO
       title: EstadoAlerta
+    GeometriaPunto:
+      properties:
+        type:
+          type: string
+          const: Point
+          title: Type
+          default: Point
+        coordinates:
+          prefixItems:
+          - type: number
+          - type: number
+          type: array
+          maxItems: 2
+          minItems: 2
+          title: Coordinates
+          description: '[longitud, latitud] (EPSG:4326)'
+          examples:
+          - - -74.0645
+            - 4.6484
+      type: object
+      required:
+      - coordinates
+      title: GeometriaPunto
+    Kardex:
+      properties:
+        producto_id:
+          type: string
+          format: uuid
+          title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
+        codigo:
+          type: string
+          title: Codigo
+          examples:
+          - REM-001
+        nombre:
+          type: string
+          title: Nombre
+          examples:
+          - Acetona pura
+        metodo:
+          type: string
+          const: PROMEDIO_PONDERADO
+          title: Metodo
+          default: PROMEDIO_PONDERADO
+        lineas:
+          items:
+            $ref: '#/components/schemas/LineaKardex'
+          type: array
+          title: Lineas
+        saldo_final:
+          type: string
+          title: Saldo Final
+          examples:
+          - '500.000'
+        valor_final:
+          type: string
+          title: Valor Final
+          examples:
+          - '19600.0000'
+      type: object
+      required:
+      - producto_id
+      - codigo
+      - nombre
+      - lineas
+      - saldo_final
+      - valor_final
+      title: Kardex
+      description: Kardex valorizado por costo promedio ponderado (NIIF para Pymes, Sección 13 · DEC-11).
+    LineaKardex:
+      properties:
+        ocurrido_en:
+          type: string
+          format: date-time
+          title: Ocurrido En
+          examples:
+          - '2026-10-28T09:00:00-05:00'
+        tipo:
+          type: string
+          title: Tipo
+          examples:
+          - ENTRADA
+        motivo_codigo:
+          type: string
+          title: Motivo Codigo
+          examples:
+          - COMPRA
+        cantidad:
+          type: string
+          title: Cantidad
+          examples:
+          - '150.000'
+        costo_unitario:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Costo Unitario
+          description: null en salidas
+          examples:
+          - '42.0000'
+        costo_total:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Costo Total
+          description: cantidad × costo_unitario
+          examples:
+          - '6300.0000'
+        saldo:
+          type: string
+          title: Saldo
+          examples:
+          - '500.000'
+        costo_promedio:
+          type: string
+          title: Costo Promedio
+          description: (saldo anterior × promedio + entrada) ÷ saldo
+          examples:
+          - '39.2000'
+        valor_saldo:
+          type: string
+          title: Valor Saldo
+          description: saldo × costo_promedio
+          examples:
+          - '19600.0000'
+      type: object
+      required:
+      - ocurrido_en
+      - tipo
+      - motivo_codigo
+      - cantidad
+      - costo_unitario
+      - costo_total
+      - saldo
+      - costo_promedio
+      - valor_saldo
+      title: LineaKardex
     Problema:
       description: Cuerpo `application/problem+json` (RFC 9457) con `code` estable.
       properties:
@@ -452,15 +775,24 @@ components:
           type: string
           format: uuid
           title: Producto Id
+          examples:
+          - 0b8e6f0a-3c4d-4e5f-8a9b-1c2d3e4f5a6b
         codigo:
           type: string
           title: Codigo
+          examples:
+          - REM-001
         nombre:
           type: string
           title: Nombre
+          examples:
+          - Acetona pura
         consumo:
           type: string
           title: Consumo
+          description: Salidas de los últimos 30 días
+          examples:
+          - '150.000'
       type: object
       required:
       - producto_id
@@ -468,17 +800,73 @@ components:
       - nombre
       - consumo
       title: ProductoRotacion
+    PropiedadesProveedor:
+      properties:
+        proveedor_id:
+          type: string
+          format: uuid
+          title: Proveedor Id
+          examples:
+          - f0000000-0000-4000-8000-000000000001
+        nombre:
+          type: string
+          title: Nombre
+          examples:
+          - Distribuidora Belleza Total
+        telefono:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Telefono
+          examples:
+          - '6015550101'
+        distancia_km:
+          type: string
+          title: Distancia Km
+          description: Distancia geodésica desde el punto consultado
+          examples:
+          - '0.19'
+      type: object
+      required:
+      - proveedor_id
+      - nombre
+      - telefono
+      - distancia_km
+      title: PropiedadesProveedor
+    ProveedorCercano:
+      properties:
+        type:
+          type: string
+          const: Feature
+          title: Type
+          default: Feature
+        geometry:
+          $ref: '#/components/schemas/GeometriaPunto'
+        properties:
+          $ref: '#/components/schemas/PropiedadesProveedor'
+      type: object
+      required:
+      - geometry
+      - properties
+      title: ProveedorCercano
     ResumenAlertas:
       properties:
         bajo_stock:
           type: integer
           title: Bajo Stock
+          examples:
+          - 5
         agotado:
           type: integer
           title: Agotado
+          examples:
+          - 2
         total:
           type: integer
           title: Total
+          description: Valor del contador del menú
+          examples:
+          - 7
       type: object
       required:
       - bajo_stock
@@ -501,10 +889,14 @@ components:
           - type: string
           - type: 'null'
           title: Valor Inventario
-          description: null mientras DEC-11 no se decida
+          description: Σ stock_actual × costo_promedio (DEC-11); null si no hay costos registrados
+          examples:
+          - '4250000.0000'
         consumo_30_dias:
           type: string
           title: Consumo 30 Dias
+          examples:
+          - '1280.000'
         top_rotacion:
           items:
             $ref: '#/components/schemas/ProductoRotacion'
