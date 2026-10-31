@@ -4,23 +4,29 @@
 
 Productos, categorías, unidades de medida, stock mínimo y descontinuación (HU-02..HU-05, HU-12 · RF-02..RF-05, RF-11, RF-12, RF-16, RF-19).
 
-## Endpoints (11)
+## Endpoints (14)
 
-| Método | Ruta | Permiso | Sprint |
+| Método | Ruta | Permiso | Entrega · responsable |
 |---|---|---|---|
-| GET | `/categorias` | producto.consultar | **1 (esqueleto andante)** |
-| POST | `/categorias` | catalogo.administrar | 2 |
-| PATCH | `/categorias/{id}` | catalogo.administrar | 2 |
-| GET | `/unidades-medida` | producto.consultar | 2 |
-| GET | `/productos` | producto.consultar | 2 |
-| GET | `/productos/{id}` | producto.consultar | 2 |
-| POST | `/productos` | producto.crear | 2 |
-| PATCH | `/productos/{id}` (exige `If-Match`) | producto.editar | 2 |
-| PUT | `/productos/{id}/stock-minimo` | producto.configurar_minimo | 2 |
-| POST | `/productos/{id}/descontinuar` | producto.descontinuar | 2 |
-| POST | `/productos/{id}/reactivar` | producto.descontinuar | 2 |
+| GET | `/categorias` | producto.consultar | Entrega 1 |
+| POST | `/categorias` | catalogo.administrar | Entrega 1 |
+| PATCH | `/categorias/{id}` | catalogo.administrar | Entrega 1 |
+| GET | `/unidades-medida` | producto.consultar | Entrega 1 |
+| GET | `/productos` | producto.consultar | Entrega 1 |
+| GET | `/productos/{id}` | producto.consultar | Entrega 1 |
+| POST | `/productos` | producto.crear | Entrega 1 |
+| PATCH | `/productos/{id}` (exige `If-Match`) | producto.editar | Entrega 1 |
+| PUT | `/productos/{id}/stock-minimo` | producto.configurar_minimo | Entrega 1 |
+| POST | `/productos/{id}/descontinuar` | producto.descontinuar | Entrega 1 |
+| POST | `/productos/{id}/reactivar` | producto.descontinuar | Entrega 1 |
+
+| GET | `/proveedores` | producto.consultar | **Gleidy725 (X2)** |
+| POST | `/proveedores` (NIT único, ubicación) | catalogo.administrar | **Gleidy725 (X2)** |
+| PATCH | `/proveedores/{id}` | catalogo.administrar | **Gleidy725 (X2)** |
 
 `DELETE /productos` no existe y responde 405 (RN-12).
+
+**Proveedores (Gleidy725):** viven en este módulo pero en archivos propios (`application/proveedores.py`, `infrastructure/proveedores_sql.py`). La ubicación se guarda en `geography(Point, 4326)` (PostGIS); conviértala con `ST_MakePoint(longitud, latitud)` y léala con `ST_X`/`ST_Y`.
 
 ## Dónde va cada cosa
 
@@ -36,10 +42,7 @@ Reglas de datos: S2 **lee** `stock_actual` pero nunca lo escribe (lo actualiza e
 
 ## Tareas
 
-* **Sprint 1 · B1:** levantar `docker compose up -d` con el esquema de spa-database y documentar cualquier ajuste en el README.
-* **Sprint 1 · B3:** dominio del catálogo con pruebas de frontera en `tests/unit/catalogo/`.
-* **Sprint 1 · B4:** `GET /categorias` de punta a punta, con prueba en `tests/integration/catalogo/`.
-* **Sprint 2:** los 10 endpoints restantes.
+Las fechas exactas están en cada issue (etiqueta `plan-entregas`): B1 Docker, B3 dominio, B4 categorías y unidades, B8 consulta de productos, B9 escritura del catálogo, X2 proveedores (Gleidy725).
 
 ## Definición de terminado
 

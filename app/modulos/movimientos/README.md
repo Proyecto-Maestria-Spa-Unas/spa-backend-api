@@ -6,14 +6,14 @@ Entradas, salidas, kardex, historial y anulación controlada (HU-06..HU-08, HU-1
 
 ## Endpoints (6)
 
-| Método | Ruta | Permiso | Sprint |
+| Método | Ruta | Permiso | Entrega · responsable |
 |---|---|---|---|
-| GET | `/motivos-movimiento` | movimiento.consultar | 3 |
-| POST | `/movimientos/entradas` (exige `Idempotency-Key`) | movimiento.registrar_entrada | 3 |
-| POST | `/movimientos/salidas` (exige `Idempotency-Key`) | movimiento.registrar_salida | 3 |
-| GET | `/movimientos` | movimiento.consultar (Manicurista: solo los propios) | 3 |
-| GET | `/movimientos/{id}` | movimiento.consultar | 3 |
-| POST | `/movimientos/{id}/anulaciones` (exige `Idempotency-Key`) | movimiento.anular | 3 |
+| GET | `/motivos-movimiento` | movimiento.consultar | **Gleidy725 (X1)** |
+| POST | `/movimientos/entradas` (exige `Idempotency-Key`) | movimiento.registrar_entrada | Entrega 2 |
+| POST | `/movimientos/salidas` (exige `Idempotency-Key`) | movimiento.registrar_salida | Entrega 2 |
+| GET | `/movimientos` | movimiento.consultar (Manicurista: solo los propios) | Entrega 2 |
+| GET | `/movimientos/{id}` | movimiento.consultar | Entrega 2 |
+| POST | `/movimientos/{id}/anulaciones` (exige `Idempotency-Key`) | movimiento.anular | Entrega 2 |
 
 `DELETE /movimientos` no existe y responde 405 (ADR-0003).
 
@@ -23,9 +23,11 @@ Entradas, salidas, kardex, historial y anulación controlada (HU-06..HU-08, HU-1
 * El saldo lo valida y actualiza el trigger `trg_movimiento_aplicar` (S0) en la misma transacción. El adaptador traduce sus errores a `StockInsuficiente`, `ProductoDescontinuado`, `MovimientoYaAnulado`.
 * Un reintento con la misma `Idempotency-Key` devuelve el movimiento ya registrado, no uno nuevo.
 
+* Las entradas por `COMPRA` llevan `costo_unitario` y `proveedor_id`: el trigger recalcula el **costo promedio ponderado** (DEC-11) y lo guarda en `costo_promedio_resultante`.
+
 ## Tareas
 
-* **Sprint 3:** los 6 endpoints, con pruebas de concurrencia (dos salidas simultáneas del último stock).
+Las fechas exactas están en cada issue (etiqueta `plan-entregas`): B10 entradas y salidas, B11 historial y anulación, B12 cierre; X1 motivos (Gleidy725). Incluya la prueba de dos salidas simultáneas del último stock.
 
 ## Definición de terminado
 

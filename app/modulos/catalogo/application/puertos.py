@@ -1,16 +1,20 @@
-"""Puertos del catálogo. S2 lee `stock_actual` pero nunca lo escribe: solo S3, vía trigger."""
+"""Puertos del catálogo. El módulo S2 lee stock_actual pero no lo escribe."""
 
-from typing import Any, Protocol
+from typing import Protocol
+from uuid import UUID
+
+from app.modulos.catalogo.domain.modelo import Categoria, Producto, UnidadMedida
 
 
 class CatalogoRepository(Protocol):
-    """Tablas inventario.categoria, unidad_medida y producto; vista inventario.v_inventario.
+    """Contrato de acceso a categorías, unidades y productos del catálogo.
 
-    TODO (B3): reemplazar `Any` por las entidades del dominio cuando existan.
+    Las firmas utilizan entidades del dominio, no tipos genéricos ni modelos
+    específicos de SQLAlchemy. La infraestructura implementa este protocolo.
     """
 
-    def listar_categorias(self, solo_activas: bool) -> list[Any]: ...
+    def listar_categorias(self, solo_activas: bool) -> list[Categoria]: ...
 
-    def listar_unidades(self) -> list[Any]: ...
+    def listar_unidades(self) -> list[UnidadMedida]: ...
 
-    def obtener_producto(self, producto_id: Any) -> Any | None: ...
+    def obtener_producto(self, producto_id: UUID) -> Producto | None: ...
