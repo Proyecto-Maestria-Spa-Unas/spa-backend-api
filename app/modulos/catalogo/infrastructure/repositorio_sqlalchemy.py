@@ -1,65 +1,65 @@
 
-"""Adaptador SQLAlchemy de CatalogoRepository (esquema inventario)."""
+"""Adaptador SQLAlchemy para consultas del catálogo."""
 
 from decimal import Decimal
-from typing import Any
 from uuid import UUID
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.modulos.catalogo.domain.modelo import (
-    Categoria,
-    EstadoInventario,
-    Magnitud,
-    Producto,
-    UnidadMedida,
-)
+from app.modulos.catalogo.domain.modelo import EstadoInventario, Producto
 
 
 class CatalogoRepositorySQL:
     def __init__(self, session: Session) -> None:
         self._session = session
 
-    def listar_categorias(self, solo_activas: bool) -> list[Categoria]:
+    def listar_categorias(self, solo_activas: bool):
         raise NotImplementedError
 
-    def listar_unidades(self) -> list[UnidadMedida]:
+    def listar_unidades(self):
         raise NotImplementedError
 
-    def _producto_desde_fila(self, fila: Any) -> Producto:
+    @staticmethod
+    def _producto_desde_fila(fila) -> Producto:
         return Producto(
-            id=fila.id,
-            codigo=fila.codigo,
-            nombre=fila.nombre,
-            descripcion=fila.descripcion,
-            categoria_id=fila.categoria_id,
-            unidad_medida_id=fila.unidad_medida_id,
-            stock_actual=Decimal(fila.stock_actual),
+            id=fila["id"],
+            codigo=fila["codigo"],
+            nombre=fila["nombre"],
+            descripcion=fila["descripcion"],
+            categoria_id=fila["categoria_id"],
+            unidad_medida_id=fila["unidad_medida_id"],
+            stock_actual=Decimal(fila["stock_actual"]),
             stock_minimo=(
-                Decimal(fila.stock_minimo)
-                if fila.stock_minimo is not None
+                Decimal(fila["stock_minimo"])
+                if fila["stock_minimo"] is not None
                 else None
             ),
-            descontinuado=fila.descontinuado,
-            version=fila.version,
-            creado_en=fila.creado_en,
-            actualizado_en=fila.actualizado_en,
+            descontinuado=fila["descontinuado"],
+            version=fila["version"],
+            creado_en=fila["creado_en"],
+            actualizado_en=fila["actualizado_en"],
         )
 
     def obtener_producto(self, producto_id: UUID) -> Producto | None:
         consulta = text("""
-            SELECT id, codigo, nombre, descripcion,
-                   categoria_id, unidad_medida_id,
-                   stock_actual, stock_minimo, descontinuado,
-                   version, creado_en, actualizado_en
+            SELECT
+                id, codigo, nombre, descripcion,
+                categoria_id, unidad_medida_id,
+                stock_actual, stock_minimo, descontinuado,
+                version, creado_en, actualizado_en
             FROM inventario.producto
             WHERE id = :producto_id
         """)
 
-        fila = self._session.execute(
-            consulta, {"producto_id": producto_id}
-        ).mappings().first()
+        fila = (
+            self._session.execute(
+                consulta,
+                {"producto_id": producto_id},
+            )
+            .mappings()
+            .first()
+        )
 
         if fila is None:
             return None
@@ -75,6 +75,7 @@ class CatalogoRepositorySQL:
         offset: int,
         limite: int,
     ) -> tuple[list[Producto], int]:
+
         filtros = """
             WHERE (:categoria_id IS NULL OR categoria_id = :categoria_id)
               AND (:estado IS NULL OR estado = :estado)
@@ -85,7 +86,7 @@ class CatalogoRepositorySQL:
                   )
               AND (
                     :incluir_descontinuados
-                    OR descontinuado = false
+                    OR descontinuado = FALSE
                   )
         """
 
@@ -103,23 +104,30 @@ class CatalogoRepositorySQL:
         )
 
         total = self._session.execute(
-            consulta_total, parametros
+            consulta_total,
+            parametros,
         ).scalar_one()
 
         consulta_productos = text("""
-            SELECT id, codigo, nombre, descripcion,
-                   categoria_id, unidad_medida_id,
-                   stock_actual, stock_minimo, descontinuado,
-                   version, creado_en, actualizado_en
+            SELECT
+                id, codigo, nombre, descripcion,
+                categoria_id, unidad_medida_id,
+                stock_actual, stock_minimo, descontinuado,
+                version, creado_en, actualizado_en
             FROM inventario.producto
         """ + filtros + """
             ORDER BY nombre, codigo
             LIMIT :limite OFFSET :offset
         """)
 
-        filas = self._session.execute(
-            consulta_productos, parametros
-        ).mappings().all()
+        filas = (
+            self._session.execute(
+                consulta_productos,
+                parametros,
+            )
+            .mappings()
+            .all()
+        )
 
         productos = [
             self._producto_desde_fila(fila)
