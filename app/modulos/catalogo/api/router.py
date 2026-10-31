@@ -17,6 +17,9 @@ from app.modulos.catalogo.api.esquemas import (
     Producto,
     ProductoActualizar,
     ProductoCrear,
+    Proveedor,
+    ProveedorActualizar,
+    ProveedorCrear,
     StockMinimo,
     UnidadMedida,
 )
@@ -168,4 +171,38 @@ def descontinuar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
     responses=respuestas(404, 409),
 )
 def reactivar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
+    raise NoImplementado()
+
+
+@router.get(
+    "/proveedores",
+    response_model=list[Proveedor],
+    summary="Listar proveedores",
+    description="producto.consultar · reposición (RF-17)",
+    responses=respuestas(),
+)
+def listar_proveedores(_: Consultor, incluir_inactivos: Annotated[bool, Query()] = False) -> list[Proveedor]:
+    raise NoImplementado()
+
+
+@router.post(
+    "/proveedores",
+    response_model=Proveedor,
+    status_code=201,
+    summary="Registrar proveedor con su ubicación",
+    description="catalogo.administrar · NIT único",
+    responses=respuestas(409),
+)
+def crear_proveedor(_: AdminCatalogo, datos: ProveedorCrear) -> Proveedor:
+    raise NoImplementado()
+
+
+@router.patch(
+    "/proveedores/{proveedor_id}",
+    response_model=Proveedor,
+    summary="Actualizar o desactivar proveedor (no existe DELETE)",
+    description="catalogo.administrar",
+    responses=respuestas(404),
+)
+def actualizar_proveedor(_: AdminCatalogo, proveedor_id: UUID, datos: ProveedorActualizar) -> Proveedor:
     raise NoImplementado()

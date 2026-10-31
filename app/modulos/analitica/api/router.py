@@ -2,6 +2,7 @@
 
 from datetime import date
 from typing import Annotated, Literal
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import Response
@@ -10,7 +11,15 @@ from app.compartido.contrato import respuestas
 from app.compartido.errores import NoImplementado
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, requiere
-from app.modulos.analitica.api.esquemas import Alerta, Cobertura, ConsumoItem, ResumenAlertas, Tablero
+from app.modulos.analitica.api.esquemas import (
+    Alerta,
+    Cobertura,
+    ColeccionProveedores,
+    ConsumoItem,
+    Kardex,
+    ResumenAlertas,
+    Tablero,
+)
 from app.modulos.analitica.domain.modelo import AgrupacionConsumo, EstadoAlerta
 
 router = APIRouter(tags=["analitica"])
@@ -93,4 +102,36 @@ def exportar(
     conjunto: Annotated[Literal["inventario", "movimientos"], Query()],
     formato: Annotated[Literal["csv", "parquet"], Query()] = "csv",
 ) -> Response:
+    raise NoImplementado()
+
+
+@router.get(
+    "/analitica/kardex",
+    response_model=Kardex,
+    summary="Kardex valorizado de un producto (costo promedio ponderado)",
+    description="analitica.consultar · RF-14, DEC-11",
+    responses=respuestas(404),
+)
+def kardex(
+    _: Analista,
+    producto_id: Annotated[UUID, Query()],
+    desde: Annotated[date | None, Query()] = None,
+    hasta: Annotated[date | None, Query()] = None,
+) -> Kardex:
+    raise NoImplementado()
+
+
+@router.get(
+    "/analitica/proveedores-cercanos",
+    response_model=ColeccionProveedores,
+    summary="Proveedores dentro de un radio (PostGIS ST_DWithin) en GeoJSON",
+    description="alerta.consultar · reposición de productos en alerta (RF-17)",
+    responses=respuestas(),
+)
+def proveedores_cercanos(
+    _: LectorAlertas,
+    latitud: Annotated[float, Query(ge=-90, le=90)],
+    longitud: Annotated[float, Query(ge=-180, le=180)],
+    radio_km: Annotated[float, Query(gt=0, le=100)] = 10,
+) -> ColeccionProveedores:
     raise NoImplementado()

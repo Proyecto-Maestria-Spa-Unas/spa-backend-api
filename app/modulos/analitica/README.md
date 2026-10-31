@@ -4,16 +4,18 @@
 
 Alertas de bajo stock y agotados, tablero de decisiones, consumo, cobertura y exportación (HU-10, HU-11 · RF-14, RF-17, RF-18, RF-19 · RNF-10). **Solo lectura.**
 
-## Endpoints (6)
+## Endpoints (8)
 
-| Método | Ruta | Permiso | Sprint |
+| Método | Ruta | Permiso | Entrega · responsable |
 |---|---|---|---|
-| GET | `/alertas` | alerta.consultar | 3 |
-| GET | `/alertas/resumen` | alerta.consultar | 3 |
-| GET | `/analitica/tablero` | analitica.consultar | 4 |
-| GET | `/analitica/consumo` | analitica.consultar | 4 |
-| GET | `/analitica/cobertura` | analitica.consultar | 4 |
-| GET | `/analitica/exportar` | analitica.consultar | 4 |
+| GET | `/alertas` | alerta.consultar | **Estefa44445 (X4)** |
+| GET | `/alertas/resumen` | alerta.consultar | **Estefa44445 (X4)** |
+| GET | `/analitica/tablero` | analitica.consultar | ivonnelizethmoreno-cloud (B14) |
+| GET | `/analitica/consumo` | analitica.consultar | ivonnelizethmoreno-cloud (B14) |
+| GET | `/analitica/cobertura` | analitica.consultar | ivonnelizethmoreno-cloud (B14) |
+| GET | `/analitica/kardex` | analitica.consultar | ivonnelizethmoreno-cloud (X7) |
+| GET | `/analitica/proveedores-cercanos` (GeoJSON) | alerta.consultar | **Estefa44445 (X6)** |
+| GET | `/analitica/exportar` | analitica.consultar | **Estefa44445 (X5)** |
 
 ## Dónde va cada cosa
 
@@ -25,7 +27,9 @@ Alertas de bajo stock y agotados, tablero de decisiones, consumo, cobertura y ex
 
 Al implementar el tablero o la exportación, agregue `pandas` y `duckdb` **a la vez** en `pyproject.toml` y `requirements.txt` (la prueba `tests/test_dependencias.py` lo exige).
 
-`valor_inventario` responde `null` mientras el grupo no decida DEC-11 (costo promedio ponderado).
+* **Kardex valorizado (X7):** método costo promedio ponderado (NIIF para Pymes, Sección 13), leído de `costo_promedio_resultante` de cada movimiento.
+* **Proveedores cercanos (X6):** función de S0 basada en `ST_DWithin` sobre `geography`; la respuesta es GeoJSON (RFC 7946) y la abre Leaflet, QGIS o ArcGIS sin conversión.
+* `valor_inventario` del tablero = Σ stock_actual × costo_promedio.
 
 ## Definición de terminado
 
