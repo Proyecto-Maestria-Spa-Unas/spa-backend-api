@@ -16,13 +16,10 @@ pytestmark = pytest.mark.integracion
 
 def test_consultar_productos_y_obtener_detalle(transaccion: Connection) -> None:
     """Consulta productos, aplica filtros y recupera el detalle por UUID."""
-    categoria_id = transaccion.execute(
-        text("SELECT id FROM inventario.categoria ORDER BY id LIMIT 1")
-    ).scalar()
+    
+    categoria_id = transaccion.execute(text("SELECT id FROM inventario.categoria ORDER BY id LIMIT 1")).scalar()
 
-    unidad_id = transaccion.execute(
-        text("SELECT id FROM inventario.unidad_medida WHERE codigo = 'UND'")
-    ).scalar()
+    unidad_id = transaccion.execute(text("SELECT id FROM inventario.unidad_medida WHERE codigo = 'UND'")).scalar()
 
     if categoria_id is None or unidad_id is None:
         pytest.skip("La base no tiene los datos de referencia del catálogo")
