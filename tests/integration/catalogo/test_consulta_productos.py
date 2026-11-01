@@ -5,13 +5,14 @@ from uuid import uuid4
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 from sqlalchemy.engine import Connection
+from sqlalchemy.orm import Session
 
-from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import CatalogoRepositorySQL
+from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import (
+    CatalogoRepositorySQL,
+)
 
 pytestmark = pytest.mark.integracion
-
 
 def test_consultar_productos_y_obtener_detalle(transaccion: Connection) -> None:
     """Consulta productos, aplica filtros y recupera el detalle por UUID."""
