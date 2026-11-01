@@ -30,7 +30,11 @@ class CatalogoRepositorySQL:
             categoria_id=fila["categoria_id"],
             unidad_medida_id=fila["unidad_medida_id"],
             stock_actual=Decimal(fila["stock_actual"]),
-            stock_minimo=(Decimal(fila["stock_minimo"]) if fila["stock_minimo"] is not None else None),
+            stock_minimo=(
+                Decimal(fila["stock_minimo"])
+                if fila["stock_minimo"] is not None
+                else None
+            ),
             descontinuado=fila["descontinuado"],
             version=fila["version"],
             creado_en=fila["creado_en"],
@@ -38,7 +42,8 @@ class CatalogoRepositorySQL:
         )
 
     def obtener_producto(self, producto_id: UUID) -> Producto | None:
-        consulta = text("""
+        consulta = text(
+            """
             SELECT
                 id,
                 codigo,
@@ -54,7 +59,8 @@ class CatalogoRepositorySQL:
                 actualizado_en
             FROM inventario.producto
             WHERE id = :producto_id
-        """)
+            """
+        )
 
         fila = (
             self._session.execute(
@@ -86,7 +92,8 @@ class CatalogoRepositorySQL:
             "incluir_descontinuados": incluir_descontinuados,
         }
 
-        consulta_total = text("""
+        consulta_total = text(
+            """
             SELECT COUNT(*)
             FROM inventario.producto
             WHERE (
@@ -106,14 +113,16 @@ class CatalogoRepositorySQL:
                 :incluir_descontinuados
                 OR descontinuado = FALSE
             )
-        """)
+            """
+        )
 
         total = self._session.execute(
             consulta_total,
             parametros,
         ).scalar_one()
 
-        consulta_productos = text("""
+        consulta_productos = text(
+            """
             SELECT
                 id,
                 codigo,
@@ -148,7 +157,8 @@ class CatalogoRepositorySQL:
             ORDER BY nombre, codigo
             LIMIT :limite
             OFFSET :offset
-        """)
+            """
+        )
 
         parametros_consulta = {
             **parametros,
@@ -165,6 +175,9 @@ class CatalogoRepositorySQL:
             .all()
         )
 
-        productos = [self._producto_desde_fila(fila) for fila in filas]
+        productos = [
+            self._producto_desde_fila(fila)
+            for fila in filas
+        ]
 
         return productos, total
