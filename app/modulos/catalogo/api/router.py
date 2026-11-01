@@ -33,15 +33,9 @@ from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import (
 
 router = APIRouter(tags=["catalogo"])
 
-Consultor = Annotated[
-    Principal, Depends(requiere(Permiso.PRODUCTO_CONSULTAR))
-]
-AdminCatalogo = Annotated[
-    Principal, Depends(requiere(Permiso.CATALOGO_ADMINISTRAR))
-]
-Descontinuador = Annotated[
-    Principal, Depends(requiere(Permiso.PRODUCTO_DESCONTINUAR))
-]
+Consultor = Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CONSULTAR))]
+AdminCatalogo = Annotated[Principal, Depends(requiere(Permiso.CATALOGO_ADMINISTRAR))]
+Descontinuador = Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_DESCONTINUAR))]
 
 
 def obtener_catalogo_repository(
