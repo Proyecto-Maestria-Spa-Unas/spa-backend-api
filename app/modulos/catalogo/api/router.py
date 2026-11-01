@@ -44,10 +44,7 @@ def obtener_catalogo_repository(
     return CatalogoRepositorySQL(session)
 
 
-CatalogoRepo = Annotated[
-    CatalogoRepositorySQL,
-    Depends(obtener_catalogo_repository),
-]
+CatalogoRepo = Annotated[CatalogoRepositorySQL, Depends(obtener_catalogo_repository)]
 
 
 def producto_a_respuesta(producto) -> Producto:
@@ -131,13 +128,9 @@ def listar_productos(
     repositorio: CatalogoRepo,
     categoria_id: Annotated[int | None, Query()] = None,
     estado: Annotated[EstadoInventario | None, Query()] = None,
-    q: Annotated[
-        str | None,
-        Query(max_length=80, description="Busca en código y nombre"),
-    ] = None,
+    q: Annotated[str | None, Query(max_length=80, description="Busca en código y nombre")] = None,
     incluir_descontinuados: Annotated[bool, Query()] = False,
 ) -> Pagina[Producto]:
-
     productos, total = repositorio.listar_productos(
         categoria_id=categoria_id,
         estado=estado,
@@ -167,7 +160,6 @@ def obtener_producto(
     producto_id: UUID,
     repositorio: CatalogoRepo,
 ) -> Producto:
-
     producto = repositorio.obtener_producto(producto_id)
 
     if producto is None:
@@ -205,10 +197,7 @@ def actualizar_producto(
     _: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_EDITAR))],
     producto_id: UUID,
     datos: ProductoActualizar,
-    if_match: Annotated[
-        int,
-        Header(alias="If-Match", description="Versión actual del producto"),
-    ],
+    if_match: Annotated[int, Header(alias="If-Match", description="Versión actual del producto")],
 ) -> Producto:
     raise NoImplementado()
 
@@ -221,10 +210,7 @@ def actualizar_producto(
     responses=respuestas(404),
 )
 def configurar_stock_minimo(
-    _: Annotated[
-        Principal,
-        Depends(requiere(Permiso.PRODUCTO_CONFIGURAR_MINIMO)),
-    ],
+    _: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CONFIGURAR_MINIMO))],
     producto_id: UUID,
     datos: StockMinimo,
 ) -> Producto:
@@ -238,10 +224,7 @@ def configurar_stock_minimo(
     description="producto.descontinuar · HU-12, RF-05, RN-11, RN-12",
     responses=respuestas(404, 409),
 )
-def descontinuar_producto(
-    _: Descontinuador,
-    producto_id: UUID,
-) -> Producto:
+def descontinuar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
     raise NoImplementado()
 
 
@@ -252,10 +235,7 @@ def descontinuar_producto(
     description="producto.descontinuar · HU-12",
     responses=respuestas(404, 409),
 )
-def reactivar_producto(
-    _: Descontinuador,
-    producto_id: UUID,
-) -> Producto:
+def reactivar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
     raise NoImplementado()
 
 
@@ -281,10 +261,7 @@ def listar_proveedores(
     description="catalogo.administrar · NIT único",
     responses=respuestas(409),
 )
-def crear_proveedor(
-    _: AdminCatalogo,
-    datos: ProveedorCrear,
-) -> Proveedor:
+def crear_proveedor(_: AdminCatalogo, datos: ProveedorCrear) -> Proveedor:
     raise NoImplementado()
 
 
