@@ -1,4 +1,3 @@
-
 """Router de S2 · Catálogo."""
 
 from typing import Annotated

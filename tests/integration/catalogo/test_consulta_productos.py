@@ -1,4 +1,3 @@
-
 """Pruebas de integración para la consulta de productos del catálogo."""
 
 from uuid import uuid4

@@ -1,4 +1,3 @@
-
 """Adaptador SQLAlchemy para las consultas del catálogo."""
 
 from decimal import Decimal
