@@ -4,23 +4,29 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import text
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.orm import Session
 
-from app.modulos.catalogo.domain.modelo import EstadoInventario, Producto
+from app.modulos.catalogo.domain.modelo import (
+    Categoria,
+    EstadoInventario,
+    Producto,
+    UnidadMedida,
+)
 
 
 class CatalogoRepositorySQL:
     def __init__(self, session: Session) -> None:
         self._session = session
 
-    def listar_categorias(self, solo_activas: bool):
+    def listar_categorias(self, solo_activas: bool) -> list[Categoria]:
         raise NotImplementedError
 
-    def listar_unidades(self):
+    def listar_unidades(self) -> list[UnidadMedida]:
         raise NotImplementedError
 
     @staticmethod
-    def _producto_desde_fila(fila) -> Producto:
+    def _producto_desde_fila(fila: RowMapping) -> Producto:
         return Producto(
             id=fila["id"],
             codigo=fila["codigo"],

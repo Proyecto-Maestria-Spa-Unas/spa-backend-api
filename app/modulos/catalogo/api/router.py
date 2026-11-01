@@ -25,7 +25,12 @@ from app.modulos.catalogo.api.esquemas import (
     StockMinimo,
     UnidadMedida,
 )
-from app.modulos.catalogo.domain.modelo import EstadoInventario
+from app.modulos.catalogo.domain.modelo import (
+    EstadoInventario,
+)
+from app.modulos.catalogo.domain.modelo import (
+    Producto as ProductoDominio,
+)
 from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import (
     CatalogoRepositorySQL,
 )
@@ -46,7 +51,7 @@ def obtener_catalogo_repository(
 CatalogoRepo = Annotated[CatalogoRepositorySQL, Depends(obtener_catalogo_repository)]
 
 
-def producto_a_respuesta(producto) -> Producto:
+def producto_a_respuesta(producto: ProductoDominio) -> Producto:
     """Convierte la entidad del dominio al esquema de respuesta de la API."""
     return Producto(
         id=producto.id,
