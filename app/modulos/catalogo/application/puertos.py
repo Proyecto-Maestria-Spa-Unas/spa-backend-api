@@ -1,4 +1,3 @@
-
 """Puertos del catálogo. El módulo S2 lee stock_actual pero no lo escribe."""
 
 from typing import Protocol
