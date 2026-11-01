@@ -30,11 +30,7 @@ class CatalogoRepositorySQL:
             categoria_id=fila["categoria_id"],
             unidad_medida_id=fila["unidad_medida_id"],
             stock_actual=Decimal(fila["stock_actual"]),
-            stock_minimo=(
-                Decimal(fila["stock_minimo"])
-                if fila["stock_minimo"] is not None
-                else None
-            ),
+            stock_minimo=(Decimal(fila["stock_minimo"]) if fila["stock_minimo"] is not None else None),
             descontinuado=fila["descontinuado"],
             version=fila["version"],
             creado_en=fila["creado_en"],
@@ -175,9 +171,5 @@ class CatalogoRepositorySQL:
             .all()
         )
 
-        productos = [
-            self._producto_desde_fila(fila)
-            for fila in filas
-        ]
-
+        productos = [self._producto_desde_fila(fila) for fila in filas]
         return productos, total
