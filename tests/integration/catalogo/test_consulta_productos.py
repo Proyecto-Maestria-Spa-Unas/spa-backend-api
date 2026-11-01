@@ -14,6 +14,7 @@ from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import (
 
 pytestmark = pytest.mark.integracion
 
+
 def test_consultar_productos_y_obtener_detalle(transaccion: Connection) -> None:
     """Consulta productos, aplica filtros y recupera el detalle por UUID."""
 
