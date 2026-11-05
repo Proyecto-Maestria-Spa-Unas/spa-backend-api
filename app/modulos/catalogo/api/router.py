@@ -1,11 +1,13 @@
-"""Router de S2 · Catálogo. No existe DELETE /productos: FastAPI responde 405 (RN-12)."""
+"""Router de S2 · Catálogo."""
 
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
+from app.compartido.db import get_session
 from app.compartido.errores import NoImplementado
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
@@ -23,14 +25,49 @@ from app.modulos.catalogo.api.esquemas import (
     StockMinimo,
     UnidadMedida,
 )
-from app.modulos.catalogo.domain.modelo import EstadoInventario
+from app.modulos.catalogo.domain.modelo import (
+    EstadoInventario,
+)
+from app.modulos.catalogo.domain.modelo import (
+    Producto as ProductoDominio,
+)
+from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import (
+    CatalogoRepositorySQL,
+)
 
 router = APIRouter(tags=["catalogo"])
-
 
 Consultor = Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CONSULTAR))]
 AdminCatalogo = Annotated[Principal, Depends(requiere(Permiso.CATALOGO_ADMINISTRAR))]
 Descontinuador = Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_DESCONTINUAR))]
+
+
+def obtener_catalogo_repository(
+    session: Annotated[Session, Depends(get_session)],
+) -> CatalogoRepositorySQL:
+    return CatalogoRepositorySQL(session)
+
+
+CatalogoRepo = Annotated[CatalogoRepositorySQL, Depends(obtener_catalogo_repository)]
+
+
+def producto_a_respuesta(producto: ProductoDominio) -> Producto:
+    """Convierte la entidad del dominio al esquema de respuesta de la API."""
+    return Producto(
+        id=producto.id,
+        codigo=producto.codigo,
+        nombre=producto.nombre,
+        descripcion=producto.descripcion,
+        categoria_id=producto.categoria_id,
+        unidad_medida_id=producto.unidad_medida_id,
+        stock_actual=producto.stock_actual,
+        stock_minimo=producto.stock_minimo,
+        estado=producto.estado,
+        descontinuado=producto.descontinuado,
+        version=producto.version,
+        creado_en=producto.creado_en,
+        actualizado_en=producto.actualizado_en,
+    )
 
 
 @router.get(
@@ -63,7 +100,11 @@ def crear_categoria(_: AdminCatalogo, datos: CategoriaCrear) -> Categoria:
     description="catalogo.administrar · RNF-09",
     responses=respuestas(404, 409),
 )
-def actualizar_categoria(_: AdminCatalogo, categoria_id: int, datos: CategoriaActualizar) -> Categoria:
+def actualizar_categoria(
+    _: AdminCatalogo,
+    categoria_id: int,
+    datos: CategoriaActualizar,
+) -> Categoria:
     raise NoImplementado()
 
 
@@ -88,12 +129,27 @@ def listar_unidades(_: Consultor) -> list[UnidadMedida]:
 def listar_productos(
     _: Consultor,
     pagina: Paginacion,
+    repositorio: CatalogoRepo,
     categoria_id: Annotated[int | None, Query()] = None,
     estado: Annotated[EstadoInventario | None, Query()] = None,
     q: Annotated[str | None, Query(max_length=80, description="Busca en código y nombre")] = None,
     incluir_descontinuados: Annotated[bool, Query()] = False,
 ) -> Pagina[Producto]:
-    raise NoImplementado()
+    productos, total = repositorio.listar_productos(
+        categoria_id=categoria_id,
+        estado=estado,
+        q=q,
+        incluir_descontinuados=incluir_descontinuados,
+        offset=pagina.offset,
+        limite=pagina.size,
+    )
+
+    return Pagina[Producto](
+        items=[producto_a_respuesta(p) for p in productos],
+        total=total,
+        page=pagina.page,
+        size=pagina.size,
+    )
 
 
 @router.get(
@@ -103,8 +159,20 @@ def listar_productos(
     description="producto.consultar · RF-03",
     responses=respuestas(404),
 )
-def obtener_producto(_: Consultor, producto_id: UUID) -> Producto:
-    raise NoImplementado()
+def obtener_producto(
+    _: Consultor,
+    producto_id: UUID,
+    repositorio: CatalogoRepo,
+) -> Producto:
+    producto = repositorio.obtener_producto(producto_id)
+
+    if producto is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Producto no encontrado",
+        )
+
+    return producto_a_respuesta(producto)
 
 
 @router.post(
@@ -116,7 +184,8 @@ def obtener_producto(_: Consultor, producto_id: UUID) -> Producto:
     responses=respuestas(409),
 )
 def crear_producto(
-    _: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CREAR))], datos: ProductoCrear
+    _: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CREAR))],
+    datos: ProductoCrear,
 ) -> Producto:
     raise NoImplementado()
 
@@ -181,7 +250,10 @@ def reactivar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
     description="producto.consultar · reposición (RF-17)",
     responses=respuestas(),
 )
-def listar_proveedores(_: Consultor, incluir_inactivos: Annotated[bool, Query()] = False) -> list[Proveedor]:
+def listar_proveedores(
+    _: Consultor,
+    incluir_inactivos: Annotated[bool, Query()] = False,
+) -> list[Proveedor]:
     raise NoImplementado()
 
 
@@ -204,5 +276,9 @@ def crear_proveedor(_: AdminCatalogo, datos: ProveedorCrear) -> Proveedor:
     description="catalogo.administrar",
     responses=respuestas(404),
 )
-def actualizar_proveedor(_: AdminCatalogo, proveedor_id: UUID, datos: ProveedorActualizar) -> Proveedor:
+def actualizar_proveedor(
+    _: AdminCatalogo,
+    proveedor_id: UUID,
+    datos: ProveedorActualizar,
+) -> Proveedor:
     raise NoImplementado()
