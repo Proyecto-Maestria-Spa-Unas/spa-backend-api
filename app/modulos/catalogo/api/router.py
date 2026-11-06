@@ -3,12 +3,12 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
 from app.compartido.db import get_session
-from app.compartido.errores import NoImplementado
+from app.compartido.errores import NoImplementado, RecursoNoExiste
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, requiere
@@ -77,8 +77,8 @@ def producto_a_respuesta(producto: ProductoDominio) -> Producto:
     description="producto.consultar · HU-04, RF-12 · Sprint 1 (B4)",
     responses=respuestas(),
 )
-def listar_categorias(_: Consultor) -> list[Categoria]:
-    raise NoImplementado()
+def listar_categorias(_: Consultor, repositorio: CatalogoRepo) -> list[Categoria]:
+    return [Categoria.model_validate(categoria, from_attributes=True) for categoria in repositorio.listar_categorias(True)]
 
 
 @router.post(
@@ -89,8 +89,9 @@ def listar_categorias(_: Consultor) -> list[Categoria]:
     description="catalogo.administrar · RNF-09",
     responses=respuestas(409),
 )
-def crear_categoria(_: AdminCatalogo, datos: CategoriaCrear) -> Categoria:
-    raise NoImplementado()
+def crear_categoria(_: AdminCatalogo, datos: CategoriaCrear, repositorio: CatalogoRepo) -> Categoria:
+    categoria = repositorio.crear_categoria(datos.model_dump())
+    return Categoria.model_validate(categoria, from_attributes=True)
 
 
 @router.patch(
@@ -104,8 +105,10 @@ def actualizar_categoria(
     _: AdminCatalogo,
     categoria_id: int,
     datos: CategoriaActualizar,
+    repositorio: CatalogoRepo,
 ) -> Categoria:
-    raise NoImplementado()
+    categoria = repositorio.actualizar_categoria(categoria_id, datos.model_dump(exclude_unset=True))
+    return Categoria.model_validate(categoria, from_attributes=True)
 
 
 @router.get(
@@ -115,8 +118,8 @@ def actualizar_categoria(
     description="producto.consultar · HU-02",
     responses=respuestas(),
 )
-def listar_unidades(_: Consultor) -> list[UnidadMedida]:
-    raise NoImplementado()
+def listar_unidades(_: Consultor, repositorio: CatalogoRepo) -> list[UnidadMedida]:
+    return [UnidadMedida.model_validate(unidad, from_attributes=True) for unidad in repositorio.listar_unidades()]
 
 
 @router.get(
@@ -167,10 +170,7 @@ def obtener_producto(
     producto = repositorio.obtener_producto(producto_id)
 
     if producto is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Producto no encontrado",
-        )
+        raise RecursoNoExiste("Producto no encontrado")
 
     return producto_a_respuesta(producto)
 
@@ -184,10 +184,13 @@ def obtener_producto(
     responses=respuestas(409),
 )
 def crear_producto(
-    _: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CREAR))],
+    principal: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CREAR))],
     datos: ProductoCrear,
+    repositorio: CatalogoRepo,
 ) -> Producto:
-    raise NoImplementado()
+    valores = datos.model_dump(exclude={"cantidad_inicial"})
+    producto = repositorio.crear_producto(valores, datos.cantidad_inicial, principal.usuario_id)
+    return producto_a_respuesta(producto)
 
 
 @router.patch(
@@ -202,8 +205,10 @@ def actualizar_producto(
     producto_id: UUID,
     datos: ProductoActualizar,
     if_match: Annotated[int, Header(alias="If-Match", description="Versión actual del producto")],
+    repositorio: CatalogoRepo,
 ) -> Producto:
-    raise NoImplementado()
+    producto = repositorio.actualizar_producto(producto_id, if_match, datos.model_dump(exclude_unset=True))
+    return producto_a_respuesta(producto)
 
 
 @router.put(
@@ -217,8 +222,10 @@ def configurar_stock_minimo(
     _: Annotated[Principal, Depends(requiere(Permiso.PRODUCTO_CONFIGURAR_MINIMO))],
     producto_id: UUID,
     datos: StockMinimo,
+    repositorio: CatalogoRepo,
 ) -> Producto:
-    raise NoImplementado()
+    producto = repositorio.cambiar_producto(producto_id, "stock_minimo", datos.stock_minimo)
+    return producto_a_respuesta(producto)
 
 
 @router.post(
@@ -228,8 +235,9 @@ def configurar_stock_minimo(
     description="producto.descontinuar · HU-12, RF-05, RN-11, RN-12",
     responses=respuestas(404, 409),
 )
-def descontinuar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
-    raise NoImplementado()
+def descontinuar_producto(_: Descontinuador, producto_id: UUID, repositorio: CatalogoRepo) -> Producto:
+    producto = repositorio.cambiar_producto(producto_id, "descontinuado", True)
+    return producto_a_respuesta(producto)
 
 
 @router.post(
@@ -239,8 +247,9 @@ def descontinuar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
     description="producto.descontinuar · HU-12",
     responses=respuestas(404, 409),
 )
-def reactivar_producto(_: Descontinuador, producto_id: UUID) -> Producto:
-    raise NoImplementado()
+def reactivar_producto(_: Descontinuador, producto_id: UUID, repositorio: CatalogoRepo) -> Producto:
+    producto = repositorio.cambiar_producto(producto_id, "descontinuado", False)
+    return producto_a_respuesta(producto)
 
 
 @router.get(

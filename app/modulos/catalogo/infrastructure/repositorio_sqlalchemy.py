@@ -1,11 +1,20 @@
 """Adaptador SQLAlchemy para las consultas del catálogo."""
 
 from decimal import Decimal
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.engine import RowMapping
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+
+from app.compartido.errores import (
+    CategoriaDuplicada,
+    CodigoDuplicado,
+    NoImplementado,
+    RecursoNoExiste,
+    VersionConflicto,
+)
 
 from app.modulos.catalogo.domain.modelo import (
     Categoria,
@@ -20,10 +29,225 @@ class CatalogoRepositorySQL:
         self._session = session
 
     def listar_categorias(self, solo_activas: bool) -> list[Categoria]:
-        raise NotImplementedError
+        filas = self._session.execute(
+            text(
+                """
+                SELECT id, nombre, descripcion, orden, activa
+                FROM inventario.categoria
+                WHERE :incluir_inactivas OR activa
+                ORDER BY orden, nombre
+                """
+            ),
+            {"incluir_inactivas": not solo_activas},
+        ).mappings()
+        return [Categoria(**fila) for fila in filas]
 
     def listar_unidades(self) -> list[UnidadMedida]:
-        raise NotImplementedError
+        filas = self._session.execute(
+            text(
+                """
+                SELECT id, codigo, nombre, magnitud, admite_decimales
+                FROM inventario.unidad_medida
+                ORDER BY nombre
+                """
+            )
+        ).mappings()
+        return [UnidadMedida(**fila) for fila in filas]
+
+    @staticmethod
+    def _es_unicidad_duplicada(error: IntegrityError) -> bool:
+        return getattr(error.orig, "sqlstate", None) == "23505"
+
+    def crear_categoria(self, datos: dict[str, object]) -> Categoria:
+        try:
+            fila = (
+                self._session.execute(
+                    text(
+                        """
+                        INSERT INTO inventario.categoria (nombre, descripcion, orden)
+                        VALUES (:nombre, :descripcion, :orden)
+                        RETURNING id, nombre, descripcion, orden, activa
+                        """
+                    ),
+                    datos,
+                )
+                .mappings()
+                .one()
+            )
+        except IntegrityError as error:
+            if self._es_unicidad_duplicada(error):
+                raise CategoriaDuplicada() from error
+            raise
+        return Categoria(**fila)
+
+    def actualizar_categoria(self, categoria_id: int, datos: dict[str, object]) -> Categoria:
+        if not datos:
+            fila = self._session.execute(
+                text(
+                    """
+                    SELECT id, nombre, descripcion, orden, activa
+                    FROM inventario.categoria WHERE id = :id
+                    """
+                ),
+                {"id": categoria_id},
+            ).mappings().first()
+            if fila is None:
+                raise RecursoNoExiste("Categoría no encontrada")
+            return Categoria(**fila)
+
+        campos = {
+            campo: valor for campo, valor in datos.items() if campo in {"nombre", "descripcion", "orden", "activa"}
+        }
+        asignaciones = ", ".join(f"{campo} = :{campo}" for campo in campos)
+        try:
+            fila = (
+                self._session.execute(
+                    text(
+                        f"""UPDATE inventario.categoria SET {asignaciones}
+                        WHERE id = :id
+                        RETURNING id, nombre, descripcion, orden, activa"""
+                    ),
+                    {**campos, "id": categoria_id},
+                )
+                .mappings()
+                .first()
+            )
+        except IntegrityError as error:
+            if self._es_unicidad_duplicada(error):
+                raise CategoriaDuplicada() from error
+            raise
+        if fila is None:
+            raise RecursoNoExiste("Categoría no encontrada")
+        return Categoria(**fila)
+
+    def crear_producto(
+        self,
+        datos: dict[str, object],
+        cantidad_inicial: Decimal | None,
+        registrado_por: UUID,
+    ) -> Producto:
+        try:
+            fila = (
+                self._session.execute(
+                    text(
+                        """
+                        INSERT INTO inventario.producto (
+                            codigo, nombre, descripcion, categoria_id,
+                            unidad_medida_id, stock_minimo
+                        )
+                        VALUES (
+                            :codigo, :nombre, :descripcion, :categoria_id,
+                            :unidad_medida_id, :stock_minimo
+                        )
+                        RETURNING id
+                        """
+                    ),
+                    datos,
+                )
+                .mappings()
+                .one()
+            )
+            producto_id = fila["id"]
+            if cantidad_inicial is not None:
+                movimiento_disponible = self._session.execute(
+                    text("SELECT to_regclass('inventario.movimiento') IS NOT NULL")
+                ).scalar_one()
+                if not movimiento_disponible:
+                    raise NoImplementado("El saldo inicial requiere la tabla de movimientos (migración D7)")
+                self._session.execute(
+                    text(
+                        """
+                        INSERT INTO inventario.movimiento (
+                            producto_id, tipo, motivo_codigo, cantidad,
+                            clave_idempotencia, registrado_por
+                        )
+                        VALUES (
+                            :producto_id, 'ENTRADA', 'SALDO_INICIAL', :cantidad,
+                            :clave_idempotencia, :registrado_por
+                        )
+                        """
+                    ),
+                    {
+                        "producto_id": producto_id,
+                        "cantidad": cantidad_inicial,
+                        "clave_idempotencia": uuid4(),
+                        "registrado_por": registrado_por,
+                    },
+                )
+        except IntegrityError as error:
+            self._session.rollback()
+            if self._es_unicidad_duplicada(error):
+                raise CodigoDuplicado("El código del producto ya está registrado") from error
+            if getattr(error.orig, "sqlstate", None) == "23503":
+                raise RecursoNoExiste("La categoría o unidad de medida no existe") from error
+            raise
+        producto = self.obtener_producto(producto_id)
+        if producto is None:
+            raise RecursoNoExiste("El producto creado no quedó disponible")
+        return producto
+
+    def actualizar_producto(self, producto_id: UUID, version: int, datos: dict[str, object]) -> Producto:
+        campos = {
+            campo: valor
+            for campo, valor in datos.items()
+            if campo in {"nombre", "descripcion", "categoria_id", "unidad_medida_id"}
+        }
+        if not campos:
+            producto = self.obtener_producto(producto_id)
+            if producto is None:
+                raise RecursoNoExiste("Producto no encontrado")
+            if producto.version != version:
+                raise VersionConflicto()
+            return producto
+        asignaciones = ", ".join(f"{campo} = :{campo}" for campo in campos)
+        try:
+            fila = (
+                self._session.execute(
+                    text(
+                        f"""UPDATE inventario.producto
+                        SET {asignaciones}
+                        WHERE id = :id AND version = :version
+                        RETURNING id, codigo, nombre, descripcion, categoria_id,
+                            unidad_medida_id, stock_actual, stock_minimo, descontinuado,
+                            version, creado_en, actualizado_en"""
+                    ),
+                    {**campos, "id": producto_id, "version": version},
+                )
+                .mappings()
+                .first()
+            )
+        except IntegrityError as error:
+            if getattr(error.orig, "sqlstate", None) == "23503":
+                raise RecursoNoExiste("La categoría o unidad de medida no existe") from error
+            raise
+        if fila is not None:
+            return self._producto_desde_fila(fila)
+        if self.obtener_producto(producto_id) is None:
+            raise RecursoNoExiste("Producto no encontrado")
+        raise VersionConflicto()
+
+    def cambiar_producto(self, producto_id: UUID, asignacion: str, valor: object) -> Producto:
+        permitidas = {"stock_minimo", "descontinuado"}
+        if asignacion not in permitidas:
+            raise ValueError("Campo de catálogo no permitido")
+        fila = (
+            self._session.execute(
+                text(
+                    f"""UPDATE inventario.producto
+                    SET {asignacion} = :valor
+                    WHERE id = :id
+                    RETURNING id, codigo, nombre, descripcion, categoria_id,
+                        unidad_medida_id, stock_actual, stock_minimo, descontinuado,
+                        version, creado_en, actualizado_en"""
+                ),
+                {"id": producto_id, "valor": valor},
+            )
+            .mappings()
+            .first()
+        )
+        if fila is None:
+            raise RecursoNoExiste("Producto no encontrado")
+        return self._producto_desde_fila(fila)
 
     @staticmethod
     def _producto_desde_fila(fila: RowMapping) -> Producto:

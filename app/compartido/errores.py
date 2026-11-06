@@ -50,6 +50,10 @@ class CodigoDuplicado(ErrorDominio):
     code, status, title = "CODIGO_DUPLICADO", 409, "El código ya está registrado"
 
 
+class CategoriaDuplicada(ErrorDominio):
+    code, status, title = "CATEGORIA_DUPLICADA", 409, "El nombre de la categoría ya está registrado"
+
+
 class StockInsuficiente(ErrorDominio):
     code, status, title = "STOCK_INSUFICIENTE", 409, "La salida supera el stock disponible"
 
