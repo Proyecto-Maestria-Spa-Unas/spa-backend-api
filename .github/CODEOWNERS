@@ -1,10 +1,4 @@
-# Revisores que GitHub solicita automáticamente por ruta (el último patrón que coincide gana).
-# Solo se listan equipos con permiso de escritura en este repositorio: GitHub ignora los demás.
-# Los PR de contrato (docs/openapi/) además deben llevar la aprobación de equipo-frontend:
-# la plantilla de PR lo recuerda y QA lo verifica antes de fusionar.
-*                    @Proyecto-Maestria-Spa-Unas/equipo-backend
-/app/compartido/     @Proyecto-Maestria-Spa-Unas/equipo-backend @Proyecto-Maestria-Spa-Unas/equipo-devops
-/Dockerfile          @Proyecto-Maestria-Spa-Unas/equipo-devops
-/docker-compose.yml  @Proyecto-Maestria-Spa-Unas/equipo-devops
-/docker/             @Proyecto-Maestria-Spa-Unas/equipo-devops
-/.github/            @Proyecto-Maestria-Spa-Unas/equipo-devops
+# Todo PR hacia develop lo aprueba un integrante de equipo-qa (ADR-0007).
+# El ruleset integracion-develop exige esa aprobación (require_code_owner_review).
+# GitHub no permite aprobar el propio PR: los PR de un integrante de QA los aprueba el otro.
+*   @Proyecto-Maestria-Spa-Unas/equipo-qa

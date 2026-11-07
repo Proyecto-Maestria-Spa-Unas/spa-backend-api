@@ -216,10 +216,19 @@ Las pruebas incluyen tres guardianes que no se deben desactivar:
 
 ### Entorno local completo (recomendado)
 
-Clone `spa-database` al lado de este repositorio (misma carpeta padre) y ejecute:
+Clone `spa-database` al lado de este repositorio (misma carpeta padre) **en la rama `develop`**: `main` solo tiene la migración base hasta la primera release. Luego ejecute:
 
 ```
+cd ../spa-database && git switch develop && git pull && cd ../spa-backend-api
 docker compose up -d --build
+```
+
+Estructura esperada:
+
+```
+Proyectos/
+├── spa-backend-api/
+└── spa-database/
 ```
 
 * Base PostGIS en `localhost:54322` con **las mismas migraciones** que el pipeline aplica en Supabase.
@@ -239,6 +248,34 @@ docker compose down -v
 docker compose up -d db
 ```
 
+#### Verificar que el entorno quedó bien
+
+```
+docker compose ps
+curl -s -o /dev/null -w "health/ready: %{http_code}\n" http://localhost:8000/api/v1/health/ready
+docker compose logs db 2>&1 | grep -E "Migración|Seed|ERROR|Base local lista"
+```
+
+* `docker compose ps`: `spa-unas-api-1` y `spa-unas-db-1` en estado `healthy`.
+* `health/ready: 200` (si responde `503`, la API no alcanza la base).
+* El registro de `db` lista cada migración de `spa-database/supabase/migrations`, luego `Seed` y termina en `✓ Base local lista con el esquema de spa-database`, sin líneas `ERROR`.
+
+#### Requisitos en Windows
+
+* **Docker Desktop con WSL 2.** Windows 11 Home no tiene Hyper-V, así que el motor de Docker corre sobre WSL 2. Si `wsl` no se reconoce, instálelo desde PowerShell como administrador con `wsl --install --no-distribution` y reinicie el equipo.
+* `docker version` debe mostrar las secciones **Client** y **Server**. Si solo muestra Client y un error `500 Internal Server Error ... dockerDesktopLinuxEngine`, cierre Docker Desktop (Quit), ejecute `wsl --shutdown` en PowerShell, abra Docker Desktop de nuevo y espere a "Engine running".
+* Si comandos de Windows como `wsl` o `systeminfo` no se reconocen aunque existan en `C:\Windows\System32`, revise que esa carpeta esté en la variable `Path` del sistema.
+
+#### Diferencia conocida con la migración base
+
+La imagen `postgis/postgis` instala `postgis` (y `fuzzystrmatch`, `postgis_topology`, `postgis_tiger_geocoder`) en el esquema `public` antes de aplicar las migraciones. Por eso, en la base local `postgis` queda en `public`, aunque la migración base la pide en `extensions` (`CREATE EXTENSION IF NOT EXISTS ... WITH SCHEMA extensions` no la mueve si ya existe). `citext` y `pgcrypto` sí quedan en `extensions`. Verificado el 01-nov-2026 con:
+
+```
+docker compose exec db psql -U postgres -tAc "select extname || ' en ' || extnamespace::regnamespace from pg_extension order by 1"
+```
+
+Las migraciones que usen tipos o funciones de PostGIS (D12) deben funcionar en ambos casos; compare con el resultado de la misma consulta en staging antes de fusionarlas.
+
 ### Imagen sola
 
 ```
@@ -246,7 +283,7 @@ docker build -t spa-backend-api .
 docker run --env-file .env -p 8000:8000 spa-backend-api
 ```
 
-La imagen se ejecuta con un usuario sin privilegios, expone el puerto 8000 y trae `HEALTHCHECK` sobre `/api/v1/health`. Es la misma base que usarán los microservicios en EKS (Sprint 4).
+La imagen se ejecuta con un usuario sin privilegios, expone el puerto 8000 y trae `HEALTHCHECK` sobre `/api/v1/health`. Es la imagen que se ejecuta en Kubernetes en la Entrega 2 (DV5 y DV7).
 
 ## 🔀 Flujo de trabajo
 
