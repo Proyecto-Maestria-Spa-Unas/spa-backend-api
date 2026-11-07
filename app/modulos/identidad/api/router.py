@@ -8,12 +8,14 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
+from app.compartido.db import get_session
 from app.compartido.errores import NoImplementado
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
-from app.compartido.seguridad import Principal, UsuarioActual, requiere
+from app.compartido.seguridad import Principal, UsuarioActual, emitir_token, requiere
 from app.modulos.identidad.api.esquemas import (
     LoginEntrada,
     LoginSalida,
@@ -26,10 +28,43 @@ from app.modulos.identidad.api.esquemas import (
     UsuarioEstado,
     UsuarioSesion,
 )
+from app.modulos.identidad.application.puertos import ProveedorIdentidad, UsuarioRepository
+from app.modulos.identidad.application.sesion import ConsultarSesion, IniciarSesion
 from app.modulos.identidad.domain.modelo import CodigoRol
+from app.modulos.identidad.domain.modelo import Usuario as UsuarioDominio
+from app.modulos.identidad.infrastructure.repositorio_sqlalchemy import UsuarioRepositorySQL
+from app.modulos.identidad.infrastructure.supabase_auth import (
+    ProveedorIdentidadNoDisponible,
+    ProveedorSupabaseAuth,
+)
 
 router = APIRouter(tags=["identidad"])
 Gestor = Annotated[Principal, Depends(requiere(Permiso.USUARIO_GESTIONAR))]
+
+
+def obtener_repositorio_usuarios(session: Annotated[Session, Depends(get_session)]) -> UsuarioRepository:
+    return UsuarioRepositorySQL(session)
+
+
+def obtener_proveedor_identidad() -> ProveedorIdentidad:
+    try:
+        return ProveedorSupabaseAuth.desde_configuracion()
+    except ValueError as exc:
+        raise ProveedorIdentidadNoDisponible("El servicio de autenticación no está configurado") from exc
+
+
+Usuarios = Annotated[UsuarioRepository, Depends(obtener_repositorio_usuarios)]
+Proveedor = Annotated[ProveedorIdentidad, Depends(obtener_proveedor_identidad)]
+
+
+def _sesion(usuario: UsuarioDominio) -> UsuarioSesion:
+    return UsuarioSesion(
+        id=usuario.id,
+        correo=usuario.correo,
+        nombre_completo=usuario.nombre_completo,
+        rol=usuario.rol.codigo,
+        permisos=sorted(usuario.rol.permisos),
+    )
 
 
 @router.post(
@@ -39,8 +74,10 @@ Gestor = Annotated[Principal, Depends(requiere(Permiso.USUARIO_GESTIONAR))]
     description="Público · HU-01",
     responses=respuestas(),
 )
-def login(datos: LoginEntrada) -> LoginSalida:
-    raise NoImplementado()
+def login(datos: LoginEntrada, usuarios: Usuarios, proveedor: Proveedor) -> LoginSalida:
+    usuario = IniciarSesion(proveedor, usuarios).ejecutar(datos.correo, datos.contrasena)
+    token, vigencia = emitir_token(usuario.id, usuario.rol.codigo.value, sorted(usuario.rol.permisos))
+    return LoginSalida(access_token=token, expires_in=vigencia, usuario=_sesion(usuario))
 
 
 @router.post(
@@ -62,8 +99,8 @@ def recuperar_contrasena(datos: RecuperarEntrada) -> Mensaje:
     description="Autenticado · HU-01, RNF-07",
     responses=respuestas(),
 )
-def sesion_actual(principal: UsuarioActual) -> UsuarioSesion:
-    raise NoImplementado()
+def sesion_actual(principal: UsuarioActual, usuarios: Usuarios) -> UsuarioSesion:
+    return _sesion(ConsultarSesion(usuarios).ejecutar(principal.usuario_id))
 
 
 @router.get(
