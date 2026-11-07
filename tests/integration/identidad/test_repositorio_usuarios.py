@@ -83,3 +83,46 @@ def test_rol_desactivado_no_aporta_permisos(transaccion: Connection, repositorio
     transaccion.execute(text("update seguridad.rol set activo = false where codigo = 'ADMINISTRADOR'"))
     usuario = repositorio.obtener(usuario_id)
     assert usuario is not None and usuario.rol.permisos == frozenset()
+
+
+# ---------- B6 · listar y guardar
+
+
+def test_guardar_crea_y_actualiza_el_perfil(transaccion: Connection, repositorio) -> None:
+    from dataclasses import replace
+    from datetime import UTC, datetime
+
+    from app.modulos.identidad.domain.modelo import Rol, Usuario
+
+    usuario_id = uuid4()
+    transaccion.execute(text("insert into auth.users (id, email) values (:id, 'b6@spa.co')"), {"id": usuario_id})
+    rol = Rol(CodigoRol.MANICURISTA, "Manicurista")
+    creado = repositorio.guardar(Usuario(usuario_id, "b6@spa.co", "Camila Rojas", rol, True, datetime.now(UTC)))
+    assert (creado.correo, creado.nombre_completo, creado.rol.codigo, creado.activo) == (
+        "b6@spa.co",
+        "Camila Rojas",
+        CodigoRol.MANICURISTA,
+        True,
+    )
+    assert "producto.consultar" in creado.rol.permisos
+    cambiado = repositorio.guardar(
+        replace(creado, nombre_completo="Camila Rojas Díaz", rol=Rol(CodigoRol.GERENTE, "Gerente"), activo=False)
+    )
+    assert (cambiado.nombre_completo, cambiado.rol.codigo, cambiado.activo) == (
+        "Camila Rojas Díaz",
+        CodigoRol.GERENTE,
+        False,
+    )
+
+
+def test_listar_filtra_por_estado_y_rol_y_pagina(transaccion: Connection, repositorio) -> None:
+    transaccion.execute(text("update seguridad.perfil set activo = activo"))  # no altera datos previos
+    antes_activos = repositorio.listar(True, CodigoRol.MANICURISTA, 0, 1000)[1]
+    _crear(transaccion, "MANICURISTA")
+    _crear(transaccion, "MANICURISTA", activo=False)
+    _crear(transaccion, "GERENTE")
+    items, total = repositorio.listar(True, CodigoRol.MANICURISTA, 0, 1000)
+    assert total == antes_activos + 1
+    assert all(u.activo and u.rol.codigo == CodigoRol.MANICURISTA for u in items)
+    pagina, total_todo = repositorio.listar(None, None, 0, 2)
+    assert len(pagina) == min(2, total_todo)
