@@ -78,7 +78,10 @@ def producto_a_respuesta(producto: ProductoDominio) -> Producto:
     responses=respuestas(),
 )
 def listar_categorias(_: Consultor, repositorio: CatalogoRepo) -> list[Categoria]:
-    return [Categoria.model_validate(categoria, from_attributes=True) for categoria in repositorio.listar_categorias(True)]
+    return [
+        Categoria.model_validate(categoria, from_attributes=True)
+        for categoria in repositorio.listar_categorias(True)
+    ]
 
 
 @router.post(

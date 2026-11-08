@@ -15,7 +15,6 @@ from app.compartido.errores import (
     RecursoNoExiste,
     VersionConflicto,
 )
-
 from app.modulos.catalogo.domain.modelo import (
     Categoria,
     EstadoInventario,
@@ -98,14 +97,15 @@ class CatalogoRepositorySQL:
         campos = {
             campo: valor for campo, valor in datos.items() if campo in {"nombre", "descripcion", "orden", "activa"}
         }
+        # SQL identifiers are interpolated only after filtering through this allowlist.
         asignaciones = ", ".join(f"{campo} = :{campo}" for campo in campos)
         try:
             fila = (
                 self._session.execute(
                     text(
-                        f"""UPDATE inventario.categoria SET {asignaciones}
-                        WHERE id = :id
-                        RETURNING id, nombre, descripcion, orden, activa"""
+                        f"UPDATE inventario.categoria SET {asignaciones} "  # noqa: S608
+                        "WHERE id = :id "
+                        "RETURNING id, nombre, descripcion, orden, activa"
                     ),
                     {**campos, "id": categoria_id},
                 )
@@ -211,17 +211,17 @@ class CatalogoRepositorySQL:
             if producto.version != version:
                 raise VersionConflicto()
             return producto
+        # SQL identifiers are interpolated only after filtering through this allowlist.
         asignaciones = ", ".join(f"{campo} = :{campo}" for campo in campos)
         try:
             fila = (
                 self._session.execute(
                     text(
-                        f"""UPDATE inventario.producto
-                        SET {asignaciones}
-                        WHERE id = :id AND version = :version
-                        RETURNING id, codigo, nombre, descripcion, categoria_id,
-                            unidad_medida_id, stock_actual, stock_minimo, descontinuado,
-                            version, creado_en, actualizado_en"""
+                        f"UPDATE inventario.producto SET {asignaciones} "  # noqa: S608
+                        "WHERE id = :id AND version = :version "
+                        "RETURNING id, codigo, nombre, descripcion, categoria_id, "
+                        "unidad_medida_id, stock_actual, stock_minimo, descontinuado, "
+                        "version, creado_en, actualizado_en"
                     ),
                     {**campos, "id": producto_id, "version": version},
                 )
@@ -242,15 +242,15 @@ class CatalogoRepositorySQL:
         permitidas = {"stock_minimo", "descontinuado"}
         if asignacion not in permitidas:
             raise ValueError("Campo de catálogo no permitido")
+        # SQL identifier was checked against `permitidas` above.
         fila = (
             self._session.execute(
                 text(
-                    f"""UPDATE inventario.producto
-                    SET {asignacion} = :valor
-                    WHERE id = :id
-                    RETURNING id, codigo, nombre, descripcion, categoria_id,
-                        unidad_medida_id, stock_actual, stock_minimo, descontinuado,
-                        version, creado_en, actualizado_en"""
+                    f"UPDATE inventario.producto SET {asignacion} = :valor "  # noqa: S608
+                    "WHERE id = :id "
+                    "RETURNING id, codigo, nombre, descripcion, categoria_id, "
+                    "unidad_medida_id, stock_actual, stock_minimo, descontinuado, "
+                    "version, creado_en, actualizado_en"
                 ),
                 {"id": producto_id, "valor": valor},
             )
