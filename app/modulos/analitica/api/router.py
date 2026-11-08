@@ -18,19 +18,24 @@ from app.modulos.analitica.api.esquemas import (
     Cobertura,
     ColeccionProveedores,
     ConsumoItem,
+    GeometriaPunto,
     Kardex,
     LineaKardex,
     ProductoRotacion,
+    PropiedadesProveedor,
+    ProveedorCercano,
     ResumenAlertas,
     Tablero,
 )
 from app.modulos.analitica.application.alertas import ConsultarResumenAlertas, ListarAlertas
 from app.modulos.analitica.application.kardex import ConsultarKardex
+from app.modulos.analitica.application.proveedores import BuscarProveedoresCercanos, ConsultasProveedores
 from app.modulos.analitica.application.tablero import CalcularCobertura, ConsultarConsumo, ObtenerTablero
 from app.modulos.analitica.domain.modelo import AgrupacionConsumo, EstadoAlerta
 from app.modulos.analitica.domain.modelo import Alerta as AlertaDominio
 from app.modulos.analitica.domain.modelo import ResumenAlertas as ResumenDominio
 from app.modulos.analitica.infrastructure.consultas_sql import ConsultasAnaliticasSQL
+from app.modulos.analitica.infrastructure.proveedores_sql import ProveedoresSQL
 
 router = APIRouter(tags=["analitica"])
 LectorAlertas = Annotated[Principal, Depends(requiere(Permiso.ALERTA_CONSULTAR))]
@@ -210,6 +215,13 @@ def kardex(
     )
 
 
+def obtener_proveedores(session: Annotated[Session, Depends(get_session)]) -> ConsultasProveedores:
+    return ProveedoresSQL(session)
+
+
+Proveedores = Annotated[ConsultasProveedores, Depends(obtener_proveedores)]
+
+
 @router.get(
     "/analitica/proveedores-cercanos",
     response_model=ColeccionProveedores,
@@ -219,8 +231,20 @@ def kardex(
 )
 def proveedores_cercanos(
     _: LectorAlertas,
+    proveedores: Proveedores,
     latitud: Annotated[float, Query(ge=-90, le=90)],
     longitud: Annotated[float, Query(ge=-180, le=180)],
     radio_km: Annotated[float, Query(gt=0, le=100)] = 10,
 ) -> ColeccionProveedores:
-    raise NoImplementado()
+    # RFC 7946: las coordenadas van como [longitud, latitud].
+    return ColeccionProveedores(
+        features=[
+            ProveedorCercano(
+                geometry=GeometriaPunto(coordinates=(p.longitud, p.latitud)),
+                properties=PropiedadesProveedor(
+                    proveedor_id=p.proveedor_id, nombre=p.nombre, telefono=p.telefono, distancia_km=p.distancia_km
+                ),
+            )
+            for p in BuscarProveedoresCercanos(proveedores)(latitud, longitud, radio_km)
+        ]
+    )
