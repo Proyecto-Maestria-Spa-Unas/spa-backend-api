@@ -4,15 +4,19 @@ Los casos de uso lanzan estas excepciones; nunca `HTTPException`. El frontend de
 mostrar según `code`, no según el texto.
 """
 
+import logging
 from http import HTTPStatus
 from typing import Any, ClassVar
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import DBAPIError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 MEDIA_PROBLEM = "application/problem+json"
+
+registro = logging.getLogger(__name__)
 
 
 class ErrorDominio(Exception):  # noqa: N818 - nombre del dominio en español
@@ -48,6 +52,10 @@ class RecursoNoExiste(ErrorDominio):
 
 class CodigoDuplicado(ErrorDominio):
     code, status, title = "CODIGO_DUPLICADO", 409, "El código ya está registrado"
+
+
+class CategoriaDuplicada(ErrorDominio):
+    code, status, title = "CATEGORIA_DUPLICADA", 409, "El nombre de la categoría ya está registrado"
 
 
 class StockInsuficiente(ErrorDominio):
@@ -88,12 +96,32 @@ def _problema(status: int, code: str, title: str, detail: str, errors: list[Any]
     return JSONResponse(cuerpo, status_code=status, media_type=MEDIA_PROBLEM)
 
 
+_ERRORES_DE_BASE: dict[str, type[ErrorDominio]] = {
+    clase.code: clase
+    for clase in (DatosInvalidos, RecursoNoExiste, StockInsuficiente, ProductoDescontinuado, MovimientoYaAnulado)
+}
+
 _CODIGO_HTTP = {
     401: "NO_AUTENTICADO",
     403: "SIN_PERMISO",
     404: "RECURSO_NO_EXISTE",
     405: "METODO_NO_PERMITIDO",
 }
+
+
+# Los disparadores de spa-database rechazan datos con RAISE EXCEPTION '<CODE>' USING DETAIL = '...'
+# (SQLSTATE P0001). Estos códigos son los mismos del contrato, así que se traducen sin pasar por el 500.
+_SQLSTATE_RAISE = "P0001"
+
+
+def error_de_base(exc: DBAPIError) -> ErrorDominio | None:
+    """Traduce el RAISE EXCEPTION de un disparador al error de dominio con el mismo `code`, si lo hay."""
+    original = exc.orig
+    diag = getattr(original, "diag", None)
+    if getattr(original, "sqlstate", None) != _SQLSTATE_RAISE or diag is None:
+        return None
+    clase = _ERRORES_DE_BASE.get(diag.message_primary or "")
+    return clase(diag.message_detail) if clase else None
 
 
 def registrar_manejadores(app: FastAPI) -> None:
@@ -105,6 +133,14 @@ def registrar_manejadores(app: FastAPI) -> None:
     async def _validacion(_: Request, exc: RequestValidationError) -> JSONResponse:
         errores = [{"campo": ".".join(str(p) for p in e["loc"]), "mensaje": e["msg"]} for e in exc.errors()]
         return _problema(422, DatosInvalidos.code, DatosInvalidos.title, "Revise los campos indicados", errores)
+
+    @app.exception_handler(DBAPIError)
+    async def _base(_: Request, exc: DBAPIError) -> JSONResponse:
+        error = error_de_base(exc)
+        if error is not None:
+            return _problema(error.status, error.code, error.title, error.detail, error.errors)
+        registro.error("Error de base de datos no controlado", exc_info=exc)
+        return _problema(500, ErrorDominio.code, ErrorDominio.title, "Error interno del servidor")
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:
