@@ -1,21 +1,24 @@
 """Puertos de analítica. Lee inventario.v_inventario, v_alerta_stock, v_consumo_diario y v_kardex (solo SELECT)."""
 
 from datetime import date
-from typing import Any, Protocol
+from typing import Protocol
 from uuid import UUID
 
 from app.modulos.analitica.domain.modelo import (
+    Alerta,
     ConsumoDiario,
+    EstadoAlerta,
     LineaKardex,
     ProductoInventario,
     ProductoReferencia,
+    ResumenAlertas,
 )
 
 
 class ConsultasAnaliticas(Protocol):
-    def alertas(self, estado: str | None) -> list[Any]:
-        """TODO (X4 · Estefa44445): tipar con los modelos del dominio."""
-        ...
+    def alertas(self, estado: EstadoAlerta | None) -> list[Alerta]: ...
+
+    def resumen_alertas(self) -> ResumenAlertas: ...
 
     def inventario(self) -> list[ProductoInventario]: ...
 

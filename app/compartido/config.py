@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     supabase_url: str | None = Field(default=None, alias="SUPABASE_URL")
     supabase_secret_key: SecretStr | None = Field(default=None, alias="SUPABASE_SECRET_KEY")
 
+    # Dirección pública del frontend. El correo de recuperación de contraseña lleva a `<FRONTEND_URL>/recuperar`.
+    # Esa dirección debe estar en Authentication → URL Configuration → Redirect URLs de Supabase.
+    # Sin ella, Supabase usa su "Site URL".
+    frontend_url: str | None = Field(default=None, alias="FRONTEND_URL")
+
 
 @lru_cache
 def get_settings() -> Settings:

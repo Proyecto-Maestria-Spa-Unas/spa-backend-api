@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
 from app.compartido.db import get_session
-from app.compartido.errores import NoImplementado
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, UsuarioActual, emitir_token, requiere
@@ -36,7 +35,8 @@ from app.modulos.identidad.application.gestion import (
     ListarUsuarios,
     ObtenerUsuario,
 )
-from app.modulos.identidad.application.puertos import ProveedorIdentidad, UsuarioRepository
+from app.modulos.identidad.application.puertos import ProveedorIdentidad, RecuperacionContrasena, UsuarioRepository
+from app.modulos.identidad.application.recuperacion import SolicitarRecuperacion
 from app.modulos.identidad.application.sesion import ConsultarSesion, IniciarSesion
 from app.modulos.identidad.domain.modelo import CodigoRol
 from app.modulos.identidad.domain.modelo import Rol as RolDominio
@@ -62,8 +62,16 @@ def obtener_proveedor_identidad() -> ProveedorIdentidad:
         raise ProveedorIdentidadNoDisponible("El servicio de autenticación no está configurado") from exc
 
 
+def obtener_recuperacion() -> RecuperacionContrasena:
+    try:
+        return ProveedorSupabaseAuth.desde_configuracion()
+    except ValueError as exc:
+        raise ProveedorIdentidadNoDisponible("El servicio de autenticación no está configurado") from exc
+
+
 Usuarios = Annotated[UsuarioRepository, Depends(obtener_repositorio_usuarios)]
 Proveedor = Annotated[ProveedorIdentidad, Depends(obtener_proveedor_identidad)]
+Recuperacion = Annotated[RecuperacionContrasena, Depends(obtener_recuperacion)]
 
 
 def _sesion(usuario: UsuarioDominio) -> UsuarioSesion:
@@ -112,8 +120,8 @@ def login(datos: LoginEntrada, usuarios: Usuarios, proveedor: Proveedor) -> Logi
     description="Público · Supabase Auth envía el correo. Responde 202 aunque el correo no exista (no revela cuentas)",
     responses=respuestas(),
 )
-def recuperar_contrasena(datos: RecuperarEntrada) -> Mensaje:
-    raise NoImplementado()
+def recuperar_contrasena(datos: RecuperarEntrada, recuperacion: Recuperacion) -> Mensaje:
+    return Mensaje(mensaje=SolicitarRecuperacion(recuperacion).ejecutar(datos.correo))
 
 
 @router.get(

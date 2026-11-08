@@ -66,6 +66,35 @@ class ProductoReferencia:
     nombre: str
 
 
+@dataclass(frozen=True)
+class Alerta:
+    """Producto que alcanzó o bajó del stock mínimo (RN-09, RN-10). Viene de inventario.v_alerta_stock."""
+
+    producto_id: UUID
+    codigo: str
+    nombre: str
+    stock_actual: Decimal
+    stock_minimo: Decimal
+    estado: EstadoAlerta
+
+    @property
+    def faltante(self) -> Decimal:
+        """stock_minimo − stock_actual: cuánto falta para volver al mínimo (nunca negativo)."""
+        return max(self.stock_minimo - self.stock_actual, Decimal(0))
+
+
+@dataclass(frozen=True)
+class ResumenAlertas:
+    """Conteo por estado; `total` alimenta el contador del menú (RF-18)."""
+
+    bajo_stock: int
+    agotado: int
+
+    @property
+    def total(self) -> int:
+        return self.bajo_stock + self.agotado
+
+
 def valor_inventario(productos: list[ProductoInventario]) -> Decimal | None:
     """Σ stock_actual × costo_promedio (DEC-11). None si ningún producto tiene costo registrado."""
     if not any(p.costo_promedio > 0 for p in productos):

@@ -24,9 +24,12 @@ from app.modulos.analitica.api.esquemas import (
     ResumenAlertas,
     Tablero,
 )
+from app.modulos.analitica.application.alertas import ConsultarResumenAlertas, ListarAlertas
 from app.modulos.analitica.application.kardex import ConsultarKardex
 from app.modulos.analitica.application.tablero import CalcularCobertura, ConsultarConsumo, ObtenerTablero
 from app.modulos.analitica.domain.modelo import AgrupacionConsumo, EstadoAlerta
+from app.modulos.analitica.domain.modelo import Alerta as AlertaDominio
+from app.modulos.analitica.domain.modelo import ResumenAlertas as ResumenDominio
 from app.modulos.analitica.infrastructure.consultas_sql import ConsultasAnaliticasSQL
 
 router = APIRouter(tags=["analitica"])
@@ -49,6 +52,22 @@ Consultas = Annotated[ConsultasAnaliticasSQL, Depends(obtener_consultas)]
 Hoy = Annotated[date, Depends(hoy_bogota)]
 
 
+def _alerta(alerta: AlertaDominio) -> Alerta:
+    return Alerta(
+        producto_id=alerta.producto_id,
+        codigo=alerta.codigo,
+        nombre=alerta.nombre,
+        stock_actual=alerta.stock_actual,
+        stock_minimo=alerta.stock_minimo,
+        estado=alerta.estado,
+        faltante=alerta.faltante,
+    )
+
+
+def _resumen(resumen: ResumenDominio) -> ResumenAlertas:
+    return ResumenAlertas(bajo_stock=resumen.bajo_stock, agotado=resumen.agotado, total=resumen.total)
+
+
 @router.get(
     "/alertas",
     response_model=list[Alerta],
@@ -56,8 +75,12 @@ Hoy = Annotated[date, Depends(hoy_bogota)]
     description="alerta.consultar · HU-10, HU-11, RF-17, RF-18",
     responses=respuestas(),
 )
-def listar_alertas(_: LectorAlertas, estado: Annotated[EstadoAlerta | None, Query()] = None) -> list[Alerta]:
-    raise NoImplementado()
+def listar_alertas(
+    _: LectorAlertas,
+    consultas: Consultas,
+    estado: Annotated[EstadoAlerta | None, Query()] = None,
+) -> list[Alerta]:
+    return [_alerta(a) for a in ListarAlertas(consultas).ejecutar(estado)]
 
 
 @router.get(
@@ -67,8 +90,8 @@ def listar_alertas(_: LectorAlertas, estado: Annotated[EstadoAlerta | None, Quer
     description="alerta.consultar · RF-18",
     responses=respuestas(),
 )
-def resumen_alertas(_: LectorAlertas) -> ResumenAlertas:
-    raise NoImplementado()
+def resumen_alertas(_: LectorAlertas, consultas: Consultas) -> ResumenAlertas:
+    return _resumen(ConsultarResumenAlertas(consultas).ejecutar())
 
 
 @router.get(
