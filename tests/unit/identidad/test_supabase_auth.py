@@ -83,6 +83,52 @@ def test_exige_url_y_clave() -> None:
         ProveedorSupabaseAuth(URL, "")
 
 
-def test_crear_cuenta_queda_para_b6() -> None:
-    with pytest.raises(NotImplementedError):
-        _proveedor(lambda _: httpx.Response(200)).crear_cuenta("a@spa.co", "Temporal-2026")
+# ---------- B6 · alta de cuentas (POST /auth/v1/admin/users)
+
+
+def test_crear_cuenta_envia_la_peticion_esperada_y_devuelve_el_id() -> None:
+    usuario_id = uuid4()
+    vistas: list[httpx.Request] = []
+
+    def responder(peticion: httpx.Request) -> httpx.Response:
+        vistas.append(peticion)
+        return httpx.Response(200, json={"id": str(usuario_id), "email": "nueva@spa.co"})
+
+    assert _proveedor(responder).crear_cuenta("nueva@spa.co", "Temporal-2026") == usuario_id
+    peticion = vistas[0]
+    assert (peticion.method, peticion.url.path) == ("POST", "/auth/v1/admin/users")
+    assert peticion.headers["apikey"] == CLAVE
+    assert "authorization" not in peticion.headers
+    assert json.loads(peticion.content) == {"email": "nueva@spa.co", "password": "Temporal-2026", "email_confirm": True}
+
+
+@pytest.mark.parametrize("campo", ["error_code", "code"])
+def test_crear_cuenta_con_correo_existente_es_codigo_duplicado(campo: str) -> None:
+    from app.compartido.errores import CodigoDuplicado
+
+    proveedor = _proveedor(lambda _: httpx.Response(422, json={campo: "email_exists", "msg": "ya registrado"}))
+    with pytest.raises(CodigoDuplicado):
+        proveedor.crear_cuenta("nueva@spa.co", "Temporal-2026")
+
+
+def test_crear_cuenta_con_clave_debil_es_datos_invalidos() -> None:
+    from app.compartido.errores import DatosInvalidos
+
+    proveedor = _proveedor(lambda _: httpx.Response(422, json={"error_code": "weak_password"}))
+    with pytest.raises(DatosInvalidos):
+        proveedor.crear_cuenta("nueva@spa.co", "Temporal-2026")
+
+
+@pytest.mark.parametrize("estado", [401, 403, 500])
+def test_crear_cuenta_con_respuesta_inesperada_no_expone_detalle(estado: int) -> None:
+    proveedor = _proveedor(lambda _: httpx.Response(estado, json={"msg": "detalle interno"}))
+    with pytest.raises(ProveedorIdentidadNoDisponible):
+        proveedor.crear_cuenta("nueva@spa.co", "Temporal-2026")
+
+
+def test_crear_cuenta_sin_conexion_es_proveedor_no_disponible() -> None:
+    def responder(_: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("sin red")
+
+    with pytest.raises(ProveedorIdentidadNoDisponible):
+        _proveedor(responder).crear_cuenta("nueva@spa.co", "Temporal-2026")

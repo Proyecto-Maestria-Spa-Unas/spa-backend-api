@@ -28,9 +28,18 @@ from app.modulos.identidad.api.esquemas import (
     UsuarioEstado,
     UsuarioSesion,
 )
+from app.modulos.identidad.application.gestion import (
+    ActualizarUsuario,
+    CambiarEstadoUsuario,
+    CrearUsuario,
+    ListarRoles,
+    ListarUsuarios,
+    ObtenerUsuario,
+)
 from app.modulos.identidad.application.puertos import ProveedorIdentidad, UsuarioRepository
 from app.modulos.identidad.application.sesion import ConsultarSesion, IniciarSesion
 from app.modulos.identidad.domain.modelo import CodigoRol
+from app.modulos.identidad.domain.modelo import Rol as RolDominio
 from app.modulos.identidad.domain.modelo import Usuario as UsuarioDominio
 from app.modulos.identidad.infrastructure.repositorio_sqlalchemy import UsuarioRepositorySQL
 from app.modulos.identidad.infrastructure.supabase_auth import (
@@ -65,6 +74,21 @@ def _sesion(usuario: UsuarioDominio) -> UsuarioSesion:
         rol=usuario.rol.codigo,
         permisos=sorted(usuario.rol.permisos),
     )
+
+
+def _usuario(usuario: UsuarioDominio) -> Usuario:
+    return Usuario(
+        id=usuario.id,
+        correo=usuario.correo,
+        nombre_completo=usuario.nombre_completo,
+        rol=usuario.rol.codigo,
+        activo=usuario.activo,
+        creado_en=usuario.creado_en,
+    )
+
+
+def _rol(rol: RolDominio) -> Rol:
+    return Rol(codigo=rol.codigo, nombre=rol.nombre, permisos=sorted(rol.permisos))
 
 
 @router.post(
@@ -113,10 +137,12 @@ def sesion_actual(principal: UsuarioActual, usuarios: Usuarios) -> UsuarioSesion
 def listar_usuarios(
     _: Gestor,
     pagina: Paginacion,
+    usuarios: Usuarios,
     activo: Annotated[bool | None, Query()] = None,
     rol: Annotated[CodigoRol | None, Query()] = None,
 ) -> Pagina[Usuario]:
-    raise NoImplementado()
+    items, total = ListarUsuarios(usuarios).ejecutar(activo, rol, pagina.offset, pagina.size)
+    return Pagina[Usuario](items=[_usuario(u) for u in items], total=total, page=pagina.page, size=pagina.size)
 
 
 @router.post(
@@ -127,8 +153,9 @@ def listar_usuarios(
     description="usuario.gestionar · HU-09, RF-13",
     responses=respuestas(409),
 )
-def crear_usuario(_: Gestor, datos: UsuarioCrear) -> Usuario:
-    raise NoImplementado()
+def crear_usuario(_: Gestor, datos: UsuarioCrear, usuarios: Usuarios, proveedor: Proveedor) -> Usuario:
+    caso = CrearUsuario(proveedor, usuarios)
+    return _usuario(caso.ejecutar(datos.correo, datos.nombre_completo, datos.rol, datos.contrasena_temporal))
 
 
 @router.get(
@@ -138,8 +165,8 @@ def crear_usuario(_: Gestor, datos: UsuarioCrear) -> Usuario:
     description="usuario.gestionar · HU-09",
     responses=respuestas(404),
 )
-def obtener_usuario(_: Gestor, usuario_id: UUID) -> Usuario:
-    raise NoImplementado()
+def obtener_usuario(_: Gestor, usuario_id: UUID, usuarios: Usuarios) -> Usuario:
+    return _usuario(ObtenerUsuario(usuarios).ejecutar(usuario_id))
 
 
 @router.patch(
@@ -149,8 +176,8 @@ def obtener_usuario(_: Gestor, usuario_id: UUID) -> Usuario:
     description="usuario.gestionar · HU-09",
     responses=respuestas(404),
 )
-def actualizar_usuario(_: Gestor, usuario_id: UUID, datos: UsuarioActualizar) -> Usuario:
-    raise NoImplementado()
+def actualizar_usuario(_: Gestor, usuario_id: UUID, datos: UsuarioActualizar, usuarios: Usuarios) -> Usuario:
+    return _usuario(ActualizarUsuario(usuarios).ejecutar(usuario_id, datos.nombre_completo, datos.rol))
 
 
 @router.patch(
@@ -160,8 +187,8 @@ def actualizar_usuario(_: Gestor, usuario_id: UUID, datos: UsuarioActualizar) ->
     description="usuario.gestionar · HU-09",
     responses=respuestas(404),
 )
-def cambiar_estado_usuario(_: Gestor, usuario_id: UUID, datos: UsuarioEstado) -> Usuario:
-    raise NoImplementado()
+def cambiar_estado_usuario(_: Gestor, usuario_id: UUID, datos: UsuarioEstado, usuarios: Usuarios) -> Usuario:
+    return _usuario(CambiarEstadoUsuario(usuarios).ejecutar(usuario_id, datos.activo))
 
 
 @router.get(
@@ -171,5 +198,5 @@ def cambiar_estado_usuario(_: Gestor, usuario_id: UUID, datos: UsuarioEstado) ->
     description="usuario.gestionar · RF-01",
     responses=respuestas(),
 )
-def listar_roles(_: Gestor) -> list[Rol]:
-    raise NoImplementado()
+def listar_roles(_: Gestor, usuarios: Usuarios) -> list[Rol]:
+    return [_rol(r) for r in ListarRoles(usuarios).ejecutar()]

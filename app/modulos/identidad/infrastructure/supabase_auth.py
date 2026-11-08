@@ -7,6 +7,12 @@ Verificado contra el código fuente de supabase/auth (commit a7e97d6, 30-oct-202
   (formato anterior) o `code` (formato de la versión de API 2024-01-01).
 Según la documentación de Supabase, la clave secreta viaja en la cabecera `apikey`.
 
+Alta de cuentas (B6), verificado contra supabase/auth (commit 35307ce, 06-nov-2026, internal/api/admin.go):
+- `POST {SUPABASE_URL}/auth/v1/admin/users` con `{"email", "password", "email_confirm"}`; éxito: 200 con el usuario.
+- Correo ya registrado: 422 con el código `email_exists`. Contraseña débil: 422 con `weak_password`.
+Las claves nuevas (`sb_secret_...`) van solo en `apikey`, sin `Authorization` (guía de migración de
+claves de Supabase). No se ha probado contra un proyecto real.
+
 La clave `SUPABASE_SECRET_KEY` salta RLS: no la exponga fuera de este archivo.
 """
 
@@ -15,9 +21,11 @@ from uuid import UUID
 import httpx
 
 from app.compartido.config import get_settings
-from app.compartido.errores import ErrorDominio
+from app.compartido.errores import CodigoDuplicado, DatosInvalidos, ErrorDominio
 
 _CREDENCIALES_INVALIDAS = "invalid_credentials"
+_CORREO_EXISTE = "email_exists"
+_CLAVE_DEBIL = "weak_password"
 
 
 class ProveedorIdentidadNoDisponible(ErrorDominio):
@@ -60,7 +68,28 @@ class ProveedorSupabaseAuth:
         )
 
     def crear_cuenta(self, correo: str, contrasena_temporal: str) -> UUID:
-        raise NotImplementedError("B6: alta de cuentas con la API de administración de Supabase Auth")
+        """Crea la cuenta ya confirmada: la administradora la da de alta, no hay correo de verificación."""
+        try:
+            respuesta = self._cliente.post(
+                f"{self._url}/auth/v1/admin/users",
+                headers={"apikey": self._clave},
+                json={"email": correo, "password": contrasena_temporal, "email_confirm": True},
+            )
+        except httpx.HTTPError as exc:
+            raise ProveedorIdentidadNoDisponible("No se pudo contactar el servicio de autenticación") from exc
+
+        if respuesta.status_code == httpx.codes.OK:
+            return UUID(str(respuesta.json()["id"]))
+
+        codigo = _codigo_error(respuesta)
+        if respuesta.status_code == httpx.codes.UNPROCESSABLE_ENTITY and codigo == _CORREO_EXISTE:
+            raise CodigoDuplicado("Ya existe una cuenta con ese correo")
+        if respuesta.status_code == httpx.codes.UNPROCESSABLE_ENTITY and codigo == _CLAVE_DEBIL:
+            raise DatosInvalidos("La contraseña temporal no cumple la política de contraseñas")
+
+        raise ProveedorIdentidadNoDisponible(
+            f"Respuesta inesperada del servicio de autenticación (HTTP {respuesta.status_code})"
+        )
 
 
 def _codigo_error(respuesta: httpx.Response) -> str | None:
