@@ -1,34 +1,22 @@
-"""Puertos de analítica. Lee inventario.v_inventario, v_alerta_stock, v_consumo_diario y v_kardex (solo SELECT)."""
+"""Puertos de analítica. Lee inventario.v_inventario, v_alerta_stock y movimiento (solo SELECT)."""
 
 from datetime import date
 from typing import Any, Protocol
-from uuid import UUID
 
-from app.modulos.analitica.domain.modelo import (
-    ConsumoDiario,
-    LineaKardex,
-    ProductoInventario,
-    ProductoReferencia,
-)
+from app.modulos.analitica.domain.modelo import Alerta, EstadoAlerta, ResumenAlertas
 
 
 class ConsultasAnaliticas(Protocol):
-    def alertas(self, estado: str | None) -> list[Any]:
-        """TODO (X4 · Estefa44445): tipar con los modelos del dominio."""
-        ...
+    """Lecturas de analítica. Las alertas ya están tipadas; el resto lo tipa B14 (S4)."""
 
-    def inventario(self) -> list[ProductoInventario]: ...
+    def alertas(self, estado: EstadoAlerta | None) -> list[Alerta]: ...
 
-    def consumo_diario(self, desde: date, hasta: date) -> list[ConsumoDiario]: ...
+    def resumen_alertas(self) -> ResumenAlertas: ...
 
-    def producto(self, producto_id: UUID) -> ProductoReferencia | None: ...
-
-    def kardex(self, producto_id: UUID, desde: date | None, hasta: date | None) -> list[LineaKardex]: ...
-
-    def ultima_linea_kardex(self, producto_id: UUID, hasta: date | None) -> LineaKardex | None: ...
+    def consumo(self, agrupar_por: str, desde: date, hasta: date) -> list[Any]: ...
 
 
 class Exportador(Protocol):
-    """Genera CSV o Parquet con DuckDB (X5)."""
+    """Genera CSV o Parquet con DuckDB (agregar `duckdb` y `pandas` a las dependencias al implementarlo)."""
 
     def exportar(self, conjunto: str, formato: str) -> bytes: ...
