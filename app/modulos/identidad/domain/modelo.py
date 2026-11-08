@@ -27,3 +27,8 @@ class Usuario:
     rol: Rol
     activo: bool
     creado_en: datetime
+
+
+def puede_iniciar_sesion(usuario: Usuario) -> bool:
+    """Regla de HU-09: una cuenta desactivada no inicia sesión ni usa una sesión vigente."""
+    return usuario.activo
