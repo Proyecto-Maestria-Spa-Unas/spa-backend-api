@@ -14,6 +14,14 @@ class ProveedorIdentidad(Protocol):
     def crear_cuenta(self, correo: str, contrasena_temporal: str) -> UUID: ...
 
 
+class RecuperacionContrasena(Protocol):
+    """Supabase Auth: envía el correo con el enlace para restablecer la contraseña (X3)."""
+
+    def solicitar_recuperacion(self, correo: str) -> None:
+        """Pide el envío del correo. No revela si la cuenta existe y no falla si el correo no sale."""
+        ...
+
+
 class UsuarioRepository(Protocol):
     """Tablas seguridad.perfil, seguridad.rol, seguridad.rol_permiso."""
 
