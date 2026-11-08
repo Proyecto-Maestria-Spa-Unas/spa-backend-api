@@ -154,21 +154,33 @@ class CatalogoRepositorySQL:
                 ).scalar_one()
                 if not movimiento_disponible:
                     raise NoImplementado("El saldo inicial requiere la tabla de movimientos (migración D7)")
+                motivo_id = self._session.execute(
+                    text(
+                        """
+                        SELECT id
+                        FROM inventario.motivo_movimiento
+                        WHERE codigo = 'SALDO_INICIAL' AND activo
+                        """
+                    )
+                ).scalar_one_or_none()
+                if motivo_id is None:
+                    raise NoImplementado("El motivo SALDO_INICIAL no está configurado en la base de datos")
                 self._session.execute(
                     text(
                         """
                         INSERT INTO inventario.movimiento (
-                            producto_id, tipo, motivo_codigo, cantidad,
+                            producto_id, tipo, motivo_id, cantidad,
                             clave_idempotencia, registrado_por
                         )
                         VALUES (
-                            :producto_id, 'ENTRADA', 'SALDO_INICIAL', :cantidad,
+                            :producto_id, 'ENTRADA', :motivo_id, :cantidad,
                             :clave_idempotencia, :registrado_por
                         )
                         """
                     ),
                     {
                         "producto_id": producto_id,
+                        "motivo_id": motivo_id,
                         "cantidad": cantidad_inicial,
                         "clave_idempotencia": uuid4(),
                         "registrado_por": registrado_por,
