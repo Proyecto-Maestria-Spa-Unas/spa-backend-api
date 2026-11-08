@@ -81,15 +81,19 @@ class CatalogoRepositorySQL:
 
     def actualizar_categoria(self, categoria_id: int, datos: dict[str, object]) -> Categoria:
         if not datos:
-            fila = self._session.execute(
-                text(
-                    """
+            fila = (
+                self._session.execute(
+                    text(
+                        """
                     SELECT id, nombre, descripcion, orden, activa
                     FROM inventario.categoria WHERE id = :id
                     """
-                ),
-                {"id": categoria_id},
-            ).mappings().first()
+                    ),
+                    {"id": categoria_id},
+                )
+                .mappings()
+                .first()
+            )
             if fila is None:
                 raise RecursoNoExiste("Categoría no encontrada")
             return Categoria(**fila)
