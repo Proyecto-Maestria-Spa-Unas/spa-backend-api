@@ -13,9 +13,18 @@ Alta de cuentas (B6), verificado contra supabase/auth (commit 35307ce, 06-nov-20
 Las claves nuevas (`sb_secret_...`) van solo en `apikey`, sin `Authorization` (guía de migración de
 claves de Supabase). No se ha probado contra un proyecto real.
 
+Recuperación de contraseña (X3): `POST {SUPABASE_URL}/auth/v1/recover` con `{"email"}` y, si se configura,
+`?redirect_to=<FRONTEND_URL>/recuperar`. Según la documentación de Supabase (guía de límites de tasa), el envío
+se limita por usuario (una vez cada 60 s), por IP y por hora con el correo integrado; al excederse responde 429.
+Este adaptador nunca propaga esos errores: la API responde 202 igual para no revelar qué cuentas existen
+(y porque el usuario no puede hacer nada con un 429). Los avisos se registran sin el correo. El enlace del
+correo lleva a `redirect_to#access_token=...&type=recovery` (flujo implícito). No se ha probado contra un
+proyecto real.
+
 La clave `SUPABASE_SECRET_KEY` salta RLS: no la exponga fuera de este archivo.
 """
 
+import logging
 from uuid import UUID
 
 import httpx
@@ -27,24 +36,34 @@ _CREDENCIALES_INVALIDAS = "invalid_credentials"
 _CORREO_EXISTE = "email_exists"
 _CLAVE_DEBIL = "weak_password"
 
+registro = logging.getLogger(__name__)
+
 
 class ProveedorIdentidadNoDisponible(ErrorDominio):
     """Supabase Auth no respondió como se esperaba. Se responde 500 sin exponer el detalle."""
 
 
 class ProveedorSupabaseAuth:
-    def __init__(self, url: str, clave_secreta: str, cliente: httpx.Client | None = None) -> None:
+    def __init__(
+        self,
+        url: str,
+        clave_secreta: str,
+        cliente: httpx.Client | None = None,
+        redirigir_a: str | None = None,
+    ) -> None:
         if not url or not clave_secreta:
             raise ValueError("Faltan SUPABASE_URL o SUPABASE_SECRET_KEY")
         self._url = url.rstrip("/")
         self._clave = clave_secreta
         self._cliente = cliente or httpx.Client(timeout=10.0)
+        self._redirigir_a = redirigir_a
 
     @classmethod
     def desde_configuracion(cls) -> "ProveedorSupabaseAuth":
         settings = get_settings()
         clave = settings.supabase_secret_key.get_secret_value() if settings.supabase_secret_key else ""
-        return cls(settings.supabase_url or "", clave)
+        redirigir_a = f"{settings.frontend_url.rstrip('/')}/recuperar" if settings.frontend_url else None
+        return cls(settings.supabase_url or "", clave, redirigir_a=redirigir_a)
 
     def verificar_credenciales(self, correo: str, contrasena: str) -> UUID | None:
         try:
@@ -90,6 +109,25 @@ class ProveedorSupabaseAuth:
         raise ProveedorIdentidadNoDisponible(
             f"Respuesta inesperada del servicio de autenticación (HTTP {respuesta.status_code})"
         )
+
+    def solicitar_recuperacion(self, correo: str) -> None:
+        """Pide a Supabase Auth que envíe el correo de recuperación. No lanza errores del servicio."""
+        try:
+            respuesta = self._cliente.post(
+                f"{self._url}/auth/v1/recover",
+                params={"redirect_to": self._redirigir_a} if self._redirigir_a else None,
+                headers={"apikey": self._clave},
+                json={"email": correo},
+            )
+        except httpx.HTTPError:
+            registro.warning("Recuperación de contraseña: no se pudo contactar el servicio de autenticación")
+            return
+        if not respuesta.is_success:
+            registro.warning(
+                "Recuperación de contraseña: Supabase Auth respondió HTTP %s (%s)",
+                respuesta.status_code,
+                _codigo_error(respuesta),
+            )
 
 
 def _codigo_error(respuesta: httpx.Response) -> str | None:
