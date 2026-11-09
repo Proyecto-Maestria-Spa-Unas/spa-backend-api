@@ -31,6 +31,8 @@ class Movimiento:
     observacion: str | None
     registrado_por: UUID
     ocurrido_en: datetime
+    movimiento_anulado_id: int | None = None
+    anulado_por_id: int | None = None
 
 
 @dataclass(frozen=True, slots=True)

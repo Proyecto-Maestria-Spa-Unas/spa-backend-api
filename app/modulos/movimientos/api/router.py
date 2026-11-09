@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
 from app.compartido.db import get_session
-from app.compartido.errores import NoImplementado
+from app.compartido.errores import DatosInvalidos, NoImplementado, RecursoNoExiste
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, requiere
@@ -25,6 +25,7 @@ from app.modulos.movimientos.api.esquemas import (
     SalidaRegistrar,
 )
 from app.modulos.movimientos.application.puertos import MovimientoRepository
+from app.modulos.movimientos.domain.modelo import Movimiento as MovimientoDominio
 from app.modulos.movimientos.domain.modelo import MovimientoRegistrado as MovimientoRegistradoDominio
 from app.modulos.movimientos.domain.modelo import TipoMovimiento
 from app.modulos.movimientos.infrastructure.repositorio_sqlalchemy import MovimientoRepositorySQL
@@ -47,6 +48,10 @@ def _respuesta_registro(registro: MovimientoRegistradoDominio) -> MovimientoRegi
         saldo=registro.saldo,
         estado=registro.estado,
     )
+
+
+def _respuesta_movimiento(movimiento: MovimientoDominio) -> Movimiento:
+    return Movimiento.model_validate(movimiento, from_attributes=True)
 
 
 @router.get(
@@ -128,7 +133,24 @@ def listar_movimientos(
     desde: Annotated[datetime | None, Query()] = None,
     hasta: Annotated[datetime | None, Query()] = None,
 ) -> Pagina[Movimiento]:
-    raise NoImplementado()
+    if desde is not None and hasta is not None and desde > hasta:
+        raise DatosInvalidos("La fecha desde no puede ser posterior a la fecha hasta")
+    filtro_usuario = principal.usuario_id if principal.rol == "MANICURISTA" else usuario_id
+    movimientos, total = repositorio.listar(
+        producto_id=producto_id,
+        tipo=tipo,
+        usuario_id=filtro_usuario,
+        desde=desde,
+        hasta=hasta,
+        offset=pagina.offset,
+        limite=pagina.size,
+    )
+    return Pagina[Movimiento](
+        items=[_respuesta_movimiento(movimiento) for movimiento in movimientos],
+        total=total,
+        page=pagina.page,
+        size=pagina.size,
+    )
 
 
 @router.get(
@@ -138,8 +160,12 @@ def listar_movimientos(
     description="movimiento.consultar · HU-08",
     responses=respuestas(404),
 )
-def obtener_movimiento(principal: Consultor, movimiento_id: int) -> Movimiento:
-    raise NoImplementado()
+def obtener_movimiento(principal: Consultor, movimiento_id: int, repositorio: MovimientosRepo) -> Movimiento:
+    usuario_id = principal.usuario_id if principal.rol == "MANICURISTA" else None
+    movimiento = repositorio.obtener(movimiento_id, usuario_id)
+    if movimiento is None:
+        raise RecursoNoExiste("Movimiento no encontrado")
+    return _respuesta_movimiento(movimiento)
 
 
 @router.post(
@@ -151,9 +177,16 @@ def obtener_movimiento(principal: Consultor, movimiento_id: int) -> Movimiento:
     responses=respuestas(404, 409),
 )
 def anular_movimiento(
-    _: Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_ANULAR))],
+    principal: Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_ANULAR))],
     movimiento_id: int,
     datos: AnulacionRegistrar,
     clave: ClaveIdempotencia,
+    repositorio: MovimientosRepo,
 ) -> MovimientoRegistrado:
-    raise NoImplementado()
+    registro = repositorio.anular(
+        movimiento_id=movimiento_id,
+        motivo=datos.motivo,
+        registrado_por=principal.usuario_id,
+        clave_idempotencia=clave,
+    )
+    return _respuesta_registro(registro)
