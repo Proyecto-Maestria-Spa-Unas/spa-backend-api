@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.compartido.tipos import Cantidad, Costo
 from app.modulos.movimientos.domain.modelo import TipoMovimiento
@@ -33,6 +33,12 @@ class EntradaRegistrar(BaseModel):
     )
     proveedor_id: UUID | None = Field(default=None, description="Proveedor de la compra", examples=[PROVEEDOR])
     observacion: str | None = Field(default=None, max_length=280, examples=["Factura FV-1023"])
+
+    @model_validator(mode="after")
+    def validar_compra(self) -> "EntradaRegistrar":
+        if self.motivo_codigo == "COMPRA" and (self.costo_unitario is None or self.proveedor_id is None):
+            raise ValueError("Una COMPRA requiere costo_unitario y proveedor_id")
+        return self
 
 
 class SalidaRegistrar(BaseModel):
