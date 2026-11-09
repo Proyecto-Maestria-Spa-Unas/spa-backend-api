@@ -112,9 +112,10 @@ class MovimientoRepositorySQL:
     ) -> MovimientoRegistrado:
         try:
             with self._session.begin_nested():
-                fila = self._session.execute(
-                    text(
-                        """
+                fila = (
+                    self._session.execute(
+                        text(
+                            """
                         INSERT INTO inventario.movimiento (
                             producto_id, tipo, motivo_id, cantidad, costo_unitario,
                             proveedor_id, observacion, registrado_por, clave_idempotencia
@@ -124,19 +125,22 @@ class MovimientoRepositorySQL:
                         )
                         RETURNING id
                         """
-                    ),
-                    {
-                        "producto_id": producto_id,
-                        "tipo": tipo,
-                        "motivo_id": motivo_id,
-                        "cantidad": cantidad,
-                        "costo_unitario": costo_unitario,
-                        "proveedor_id": proveedor_id,
-                        "observacion": observacion,
-                        "registrado_por": registrado_por,
-                        "clave_idempotencia": clave_idempotencia,
-                    },
-                ).mappings().one()
+                        ),
+                        {
+                            "producto_id": producto_id,
+                            "tipo": tipo,
+                            "motivo_id": motivo_id,
+                            "cantidad": cantidad,
+                            "costo_unitario": costo_unitario,
+                            "proveedor_id": proveedor_id,
+                            "observacion": observacion,
+                            "registrado_por": registrado_por,
+                            "clave_idempotencia": clave_idempotencia,
+                        },
+                    )
+                    .mappings()
+                    .one()
+                )
         except IntegrityError as error:
             if self._es_clave_duplicada(error):
                 existente = self._buscar_por_clave(clave_idempotencia)
@@ -148,9 +152,10 @@ class MovimientoRepositorySQL:
         return self._buscar_por_id(int(fila["id"]))
 
     def _buscar_por_clave(self, clave_idempotencia: UUID) -> MovimientoRegistrado | None:
-        fila = self._session.execute(
-            text(
-                """
+        fila = (
+            self._session.execute(
+                text(
+                    """
                 SELECT
                     m.id, m.producto_id, m.tipo, mm.codigo AS motivo_codigo,
                     m.cantidad, m.saldo_resultante, m.costo_unitario,
@@ -167,15 +172,19 @@ class MovimientoRepositorySQL:
                 JOIN inventario.producto AS p ON p.id = m.producto_id
                 WHERE m.clave_idempotencia = :clave_idempotencia
                 """
-            ),
-            {"clave_idempotencia": clave_idempotencia},
-        ).mappings().first()
+                ),
+                {"clave_idempotencia": clave_idempotencia},
+            )
+            .mappings()
+            .first()
+        )
         return self._a_registro(fila) if fila is not None else None
 
     def _buscar_por_id(self, movimiento_id: int) -> MovimientoRegistrado:
-        fila = self._session.execute(
-            text(
-                """
+        fila = (
+            self._session.execute(
+                text(
+                    """
                 SELECT
                     m.id, m.producto_id, m.tipo, mm.codigo AS motivo_codigo,
                     m.cantidad, m.saldo_resultante, m.costo_unitario,
@@ -192,9 +201,12 @@ class MovimientoRepositorySQL:
                 JOIN inventario.producto AS p ON p.id = m.producto_id
                 WHERE m.id = :movimiento_id
                 """
-            ),
-            {"movimiento_id": movimiento_id},
-        ).mappings().one()
+                ),
+                {"movimiento_id": movimiento_id},
+            )
+            .mappings()
+            .one()
+        )
         return self._a_registro(fila)
 
     @staticmethod
