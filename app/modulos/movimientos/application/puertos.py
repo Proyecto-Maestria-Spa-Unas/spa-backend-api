@@ -1,14 +1,33 @@
 """Puertos de movimientos. Solo INSERT sobre inventario.movimiento."""
 
-from typing import Any, Protocol
+from decimal import Decimal
+from typing import Protocol
 from uuid import UUID
+
+from app.modulos.movimientos.domain.modelo import MovimientoRegistrado
 
 
 class MovimientoRepository(Protocol):
-    """TODO (S3 · Damx0611): reemplazar `Any` por las entidades del dominio."""
+    """Puerto para registrar movimientos de inventario."""
 
-    def registrar(self, movimiento: Any, clave_idempotencia: UUID) -> Any: ...
+    def registrar_entrada(
+        self,
+        producto_id: UUID,
+        cantidad: Decimal,
+        motivo_codigo: str,
+        costo_unitario: Decimal | None,
+        proveedor_id: UUID | None,
+        observacion: str | None,
+        registrado_por: UUID,
+        clave_idempotencia: UUID,
+    ) -> MovimientoRegistrado: ...
 
-    def buscar_por_clave(self, clave_idempotencia: UUID) -> Any | None: ...
-
-    def obtener(self, movimiento_id: int) -> Any | None: ...
+    def registrar_salida(
+        self,
+        producto_id: UUID,
+        cantidad: Decimal,
+        motivo_codigo: str,
+        observacion: str | None,
+        registrado_por: UUID,
+        clave_idempotencia: UUID,
+    ) -> MovimientoRegistrado: ...
