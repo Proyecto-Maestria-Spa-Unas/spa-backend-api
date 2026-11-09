@@ -55,6 +55,7 @@ def obtener_catalogo_repository(
 
 CatalogoRepo = Annotated[CatalogoRepositorySQL, Depends(obtener_catalogo_repository)]
 
+
 def obtener_proveedores_repository(
     session: Annotated[Session, Depends(get_session)],
 ) -> ProveedoresSQL:

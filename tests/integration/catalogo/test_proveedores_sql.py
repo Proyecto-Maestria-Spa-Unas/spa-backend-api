@@ -178,9 +178,7 @@ def test_actualizar_proveedor_permite_eliminar_ubicacion(
 
     with Session(bind=transaccion) as session:
         repositorio = ProveedoresSQL(session)
-        proveedor = next(
-            p for p in repositorio.listar() if p.nit == nit
-        )
+        proveedor = next(p for p in repositorio.listar() if p.nit == nit)
 
         actualizado = repositorio.actualizar(
             proveedor.id,
@@ -230,9 +228,7 @@ def test_actualizar_proveedor_sin_cambios_devuelve_el_actual(
 
     with Session(bind=transaccion) as session:
         repositorio = ProveedoresSQL(session)
-        proveedor = next(
-            p for p in repositorio.listar() if p.nit == nit
-        )
+        proveedor = next(p for p in repositorio.listar() if p.nit == nit)
 
         actualizado = repositorio.actualizar(proveedor.id, {})
 

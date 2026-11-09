@@ -37,6 +37,7 @@ def _proveedor(
         activo=activo,
     )
 
+
 class ProveedoresEnMemoria:
     def __init__(self, proveedores: list[Proveedor] | None = None) -> None:
         self._proveedores = proveedores or []
@@ -46,7 +47,6 @@ class ProveedoresEnMemoria:
             return self._proveedores
 
         return [proveedor for proveedor in self._proveedores if proveedor.activo]
-
 
     def crear(self, datos: dict[str, object]) -> Proveedor:
         from app.compartido.errores import ProveedorDuplicado
@@ -104,6 +104,7 @@ class ProveedoresEnMemoria:
 
         raise RecursoNoExiste("Proveedor no encontrado")
 
+
 @pytest.fixture
 def repositorio_proveedores() -> Iterator[ProveedoresEnMemoria]:
     falso = ProveedoresEnMemoria()
@@ -112,6 +113,7 @@ def repositorio_proveedores() -> Iterator[ProveedoresEnMemoria]:
     yield falso
 
     app.dependency_overrides.pop(obtener_proveedores_repository, None)
+
 
 def test_listar_proveedores(
     cliente: TestClient,
@@ -386,4 +388,3 @@ def test_actualizar_proveedor_elimina_ubicacion(
 
     assert respuesta.status_code == 200, respuesta.text
     assert respuesta.json()["ubicacion"] is None
-
