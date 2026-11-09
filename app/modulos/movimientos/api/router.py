@@ -27,7 +27,6 @@ from app.modulos.movimientos.api.esquemas import (
 from app.modulos.movimientos.application.puertos import MovimientoRepository
 from app.modulos.movimientos.domain.modelo import MovimientoRegistrado as MovimientoRegistradoDominio
 from app.modulos.movimientos.domain.modelo import TipoMovimiento
-
 from app.modulos.movimientos.infrastructure.repositorio_sqlalchemy import MovimientoRepositorySQL
 
 router = APIRouter(tags=["movimientos"])

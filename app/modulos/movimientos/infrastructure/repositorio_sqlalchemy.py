@@ -262,11 +262,7 @@ class MovimientoRepositorySQL:
             motivo_codigo=fila["motivo_codigo"] or "",
             cantidad=Decimal(fila["cantidad"]),
             saldo_resultante=Decimal(fila["saldo_resultante"]),
-            costo_unitario=(
-                Decimal(fila["costo_unitario"])
-                if fila["costo_unitario"] is not None
-                else None
-            ),
+            costo_unitario=(Decimal(fila["costo_unitario"]) if fila["costo_unitario"] is not None else None),
             costo_promedio_resultante=Decimal(fila["costo_promedio_resultante"]),
             proveedor_id=fila["proveedor_id"],
             observacion=fila["observacion"],
