@@ -6,6 +6,7 @@ Errores de la base que este adaptador traduce a errores de dominio (app.comparti
 - UNIQUE de movimiento_anulado_id → MovimientoYaAnulado (409)
 """
 
+from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -14,7 +15,7 @@ from sqlalchemy.engine import RowMapping
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.compartido.errores import DatosInvalidos, RecursoNoExiste
+from app.compartido.errores import DatosInvalidos, MovimientoYaAnulado, RecursoNoExiste
 from app.modulos.movimientos.domain.modelo import Movimiento, MovimientoRegistrado, TipoMovimiento
 
 
@@ -75,6 +76,167 @@ class MovimientoRepositorySQL:
             registrado_por,
             clave_idempotencia,
         )
+
+    def listar(
+        self,
+        producto_id: UUID | None,
+        tipo: TipoMovimiento | None,
+        usuario_id: UUID | None,
+        desde: datetime | None,
+        hasta: datetime | None,
+        offset: int,
+        limite: int,
+    ) -> tuple[list[Movimiento], int]:
+        parametros = {
+            "producto_id": producto_id,
+            "tipo": tipo.value if tipo is not None else None,
+            "usuario_id": usuario_id,
+            "desde": desde,
+            "hasta": hasta,
+        }
+        total = self._session.execute(
+            text(
+                """
+                SELECT count(*)
+                FROM inventario.movimiento AS m
+                WHERE (CAST(:producto_id AS UUID) IS NULL OR m.producto_id = :producto_id)
+                  AND (CAST(:tipo AS TEXT) IS NULL OR m.tipo = :tipo)
+                  AND (CAST(:usuario_id AS UUID) IS NULL OR m.registrado_por = :usuario_id)
+                  AND (CAST(:desde AS TIMESTAMPTZ) IS NULL OR m.ocurrido_en >= :desde)
+                  AND (CAST(:hasta AS TIMESTAMPTZ) IS NULL OR m.ocurrido_en <= :hasta)
+                """
+            ),
+            parametros,
+        ).scalar_one()
+        filas = (
+            self._session.execute(
+                text(
+                    """
+                    SELECT
+                        m.id, m.producto_id, m.tipo, COALESCE(mm.codigo, 'ANULACION') AS motivo_codigo,
+                        m.cantidad, m.saldo_resultante, m.costo_unitario,
+                        m.costo_promedio_resultante, m.proveedor_id, m.observacion,
+                        m.registrado_por, m.ocurrido_en, m.movimiento_anulado_id,
+                        (
+                            SELECT anulacion.id
+                            FROM inventario.movimiento AS anulacion
+                            WHERE anulacion.movimiento_anulado_id = m.id
+                        ) AS anulado_por_id,
+                        CASE
+                            WHEN p.descontinuado THEN 'DESCONTINUADO'
+                            WHEN m.saldo_resultante <= 0 THEN 'AGOTADO'
+                            WHEN p.stock_minimo IS NOT NULL AND m.saldo_resultante <= p.stock_minimo THEN 'BAJO_STOCK'
+                            ELSE 'DISPONIBLE'
+                        END AS estado
+                    FROM inventario.movimiento AS m
+                    LEFT JOIN inventario.motivo_movimiento AS mm ON mm.id = m.motivo_id
+                    JOIN inventario.producto AS p ON p.id = m.producto_id
+                    WHERE (CAST(:producto_id AS UUID) IS NULL OR m.producto_id = :producto_id)
+                      AND (CAST(:tipo AS TEXT) IS NULL OR m.tipo = :tipo)
+                      AND (CAST(:usuario_id AS UUID) IS NULL OR m.registrado_por = :usuario_id)
+                      AND (CAST(:desde AS TIMESTAMPTZ) IS NULL OR m.ocurrido_en >= :desde)
+                      AND (CAST(:hasta AS TIMESTAMPTZ) IS NULL OR m.ocurrido_en <= :hasta)
+                    ORDER BY m.ocurrido_en DESC, m.id DESC
+                    LIMIT :limite OFFSET :offset
+                    """
+                ),
+                {**parametros, "limite": limite, "offset": offset},
+            )
+            .mappings()
+            .all()
+        )
+        return [self._a_movimiento(fila) for fila in filas], int(total)
+
+    def obtener(self, movimiento_id: int, usuario_id: UUID | None = None) -> Movimiento | None:
+        fila = (
+            self._session.execute(
+                text(
+                    """
+                    SELECT
+                        m.id, m.producto_id, m.tipo, COALESCE(mm.codigo, 'ANULACION') AS motivo_codigo,
+                        m.cantidad, m.saldo_resultante, m.costo_unitario,
+                        m.costo_promedio_resultante, m.proveedor_id, m.observacion,
+                        m.registrado_por, m.ocurrido_en, m.movimiento_anulado_id,
+                        (
+                            SELECT anulacion.id
+                            FROM inventario.movimiento AS anulacion
+                            WHERE anulacion.movimiento_anulado_id = m.id
+                        ) AS anulado_por_id,
+                        CASE
+                            WHEN p.descontinuado THEN 'DESCONTINUADO'
+                            WHEN m.saldo_resultante <= 0 THEN 'AGOTADO'
+                            WHEN p.stock_minimo IS NOT NULL AND m.saldo_resultante <= p.stock_minimo THEN 'BAJO_STOCK'
+                            ELSE 'DISPONIBLE'
+                        END AS estado
+                    FROM inventario.movimiento AS m
+                    LEFT JOIN inventario.motivo_movimiento AS mm ON mm.id = m.motivo_id
+                    JOIN inventario.producto AS p ON p.id = m.producto_id
+                    WHERE m.id = :movimiento_id
+                      AND (CAST(:usuario_id AS UUID) IS NULL OR m.registrado_por = :usuario_id)
+                    """
+                ),
+                {"movimiento_id": movimiento_id, "usuario_id": usuario_id},
+            )
+            .mappings()
+            .first()
+        )
+        return self._a_movimiento(fila) if fila is not None else None
+
+    def anular(
+        self,
+        movimiento_id: int,
+        motivo: str,
+        registrado_por: UUID,
+        clave_idempotencia: UUID,
+    ) -> MovimientoRegistrado:
+        self._bloquear_clave(clave_idempotencia)
+        existente = self._buscar_por_clave(clave_idempotencia)
+        if existente is not None:
+            return existente
+        producto_id = self._session.execute(
+            text("SELECT producto_id FROM inventario.movimiento WHERE id = :movimiento_id"),
+            {"movimiento_id": movimiento_id},
+        ).scalar_one_or_none()
+        if producto_id is None:
+            raise RecursoNoExiste("Movimiento no encontrado")
+        try:
+            with self._session.begin_nested():
+                fila = (
+                    self._session.execute(
+                        text(
+                            """
+                            INSERT INTO inventario.movimiento (
+                                producto_id, tipo, motivo_id, cantidad, observacion,
+                                registrado_por, movimiento_anulado_id, clave_idempotencia
+                            ) VALUES (
+                                :producto_id, 'ANULACION', NULL, 1, :observacion,
+                                :registrado_por, :movimiento_anulado_id, :clave_idempotencia
+                            )
+                            RETURNING id
+                            """
+                        ),
+                        {
+                            "producto_id": producto_id,
+                            "observacion": motivo,
+                            "registrado_por": registrado_por,
+                            "movimiento_anulado_id": movimiento_id,
+                            "clave_idempotencia": clave_idempotencia,
+                        },
+                    )
+                    .mappings()
+                    .one()
+                )
+        except IntegrityError as error:
+            if self._constraint_name(error) == "movimiento_anulado_uk":
+                raise MovimientoYaAnulado() from error
+            if self._es_clave_duplicada(error):
+                existente = self._buscar_por_clave(clave_idempotencia)
+                if existente is not None:
+                    return existente
+            if getattr(error.orig, "sqlstate", None) == "23503":
+                raise RecursoNoExiste("El movimiento indicado no existe") from error
+            raise
+        return self._buscar_por_id(int(fila["id"]))
 
     def _motivo_id(self, codigo: str, tipo: TipoMovimiento) -> int:
         motivo_id = self._session.execute(
@@ -157,10 +319,15 @@ class MovimientoRepositorySQL:
                 text(
                     """
                 SELECT
-                    m.id, m.producto_id, m.tipo, mm.codigo AS motivo_codigo,
+                    m.id, m.producto_id, m.tipo, COALESCE(mm.codigo, 'ANULACION') AS motivo_codigo,
                     m.cantidad, m.saldo_resultante, m.costo_unitario,
                     m.costo_promedio_resultante, m.proveedor_id, m.observacion,
-                    m.registrado_por, m.ocurrido_en,
+                    m.registrado_por, m.ocurrido_en, m.movimiento_anulado_id,
+                    (
+                        SELECT anulacion.id
+                        FROM inventario.movimiento AS anulacion
+                        WHERE anulacion.movimiento_anulado_id = m.id
+                    ) AS anulado_por_id,
                     CASE
                         WHEN p.descontinuado THEN 'DESCONTINUADO'
                         WHEN m.saldo_resultante <= 0 THEN 'AGOTADO'
@@ -186,10 +353,15 @@ class MovimientoRepositorySQL:
                 text(
                     """
                 SELECT
-                    m.id, m.producto_id, m.tipo, mm.codigo AS motivo_codigo,
+                    m.id, m.producto_id, m.tipo, COALESCE(mm.codigo, 'ANULACION') AS motivo_codigo,
                     m.cantidad, m.saldo_resultante, m.costo_unitario,
                     m.costo_promedio_resultante, m.proveedor_id, m.observacion,
-                    m.registrado_por, m.ocurrido_en,
+                    m.registrado_por, m.ocurrido_en, m.movimiento_anulado_id,
+                    (
+                        SELECT anulacion.id
+                        FROM inventario.movimiento AS anulacion
+                        WHERE anulacion.movimiento_anulado_id = m.id
+                    ) AS anulado_por_id,
                     CASE
                         WHEN p.descontinuado THEN 'DESCONTINUADO'
                         WHEN m.saldo_resultante <= 0 THEN 'AGOTADO'
@@ -211,12 +383,16 @@ class MovimientoRepositorySQL:
 
     @staticmethod
     def _es_clave_duplicada(error: IntegrityError) -> bool:
-        diag = getattr(error.orig, "diag", None)
-        return getattr(diag, "constraint_name", None) == "movimiento_clave_uk"
+        return MovimientoRepositorySQL._constraint_name(error) == "movimiento_clave_uk"
 
     @staticmethod
-    def _a_registro(fila: RowMapping) -> MovimientoRegistrado:
-        movimiento = Movimiento(
+    def _constraint_name(error: IntegrityError) -> str | None:
+        diag = getattr(error.orig, "diag", None)
+        return getattr(diag, "constraint_name", None)
+
+    @staticmethod
+    def _a_movimiento(fila: RowMapping) -> Movimiento:
+        return Movimiento(
             id=fila["id"],
             producto_id=fila["producto_id"],
             tipo=TipoMovimiento(fila["tipo"]),
@@ -229,7 +405,13 @@ class MovimientoRepositorySQL:
             observacion=fila["observacion"],
             registrado_por=fila["registrado_por"],
             ocurrido_en=fila["ocurrido_en"],
+            movimiento_anulado_id=fila["movimiento_anulado_id"],
+            anulado_por_id=fila["anulado_por_id"],
         )
+
+    @classmethod
+    def _a_registro(cls, fila: RowMapping) -> MovimientoRegistrado:
+        movimiento = cls._a_movimiento(fila)
         return MovimientoRegistrado(
             movimiento=movimiento,
             saldo=movimiento.saldo_resultante,
