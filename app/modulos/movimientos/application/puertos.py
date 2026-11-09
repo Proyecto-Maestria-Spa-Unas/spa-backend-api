@@ -5,11 +5,16 @@ from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
-from app.modulos.movimientos.domain.modelo import Movimiento, MovimientoRegistrado, TipoMovimiento
+from app.modulos.movimientos.domain.modelo import (
+    MotivoMovimiento,
+    Movimiento,
+    MovimientoRegistrado,
+    TipoMovimiento,
+)
 
 
 class MovimientoRepository(Protocol):
-    """Puerto para registrar movimientos de inventario."""
+    """Puerto para registrar movimientos y consultar motivos."""
 
     def registrar_entrada(
         self,
@@ -33,6 +38,11 @@ class MovimientoRepository(Protocol):
         clave_idempotencia: UUID,
     ) -> MovimientoRegistrado: ...
 
+    def listar_motivos(
+        self,
+        tipo: TipoMovimiento | None = None,
+    ) -> list[MotivoMovimiento]: ...
+
     def listar(
         self,
         producto_id: UUID | None,
@@ -44,7 +54,11 @@ class MovimientoRepository(Protocol):
         limite: int,
     ) -> tuple[list[Movimiento], int]: ...
 
-    def obtener(self, movimiento_id: int, usuario_id: UUID | None = None) -> Movimiento | None: ...
+    def obtener(
+        self,
+        movimiento_id: int,
+        usuario_id: UUID | None = None,
+    ) -> Movimiento | None: ...
 
     def anular(
         self,
