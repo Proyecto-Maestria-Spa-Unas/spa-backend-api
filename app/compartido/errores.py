@@ -54,6 +54,10 @@ class CodigoDuplicado(ErrorDominio):
     code, status, title = "CODIGO_DUPLICADO", 409, "El código ya está registrado"
 
 
+class ProveedorDuplicado(ErrorDominio):
+    code, status, title = "CODIGO_DUPLICADO", 409, "El NIT del proveedor ya está registrado"
+
+
 class CategoriaDuplicada(ErrorDominio):
     code, status, title = "CATEGORIA_DUPLICADA", 409, "El nombre de la categoría ya está registrado"
 

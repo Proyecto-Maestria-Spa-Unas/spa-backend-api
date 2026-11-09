@@ -11,6 +11,7 @@ from app.modulos.catalogo.domain.modelo import (
     EstadoInventario,
     Magnitud,
     Producto,
+    Proveedor,
     UnidadMedida,
     calcular_estado_inventario,
 )
@@ -72,3 +73,21 @@ def test_entidades_basicas_del_catalogo() -> None:
     assert categoria.activa is True
     assert categoria.orden == 0
     assert unidad.magnitud is Magnitud.VOLUMEN
+
+
+def test_entidad_proveedor() -> None:
+    proveedor = Proveedor(
+        id=uuid4(),
+        nit="900123456-7",
+        nombre="Distribuidora Belleza Total",
+        telefono=None,
+        correo=None,
+        direccion=None,
+        latitud=4.6533,
+        longitud=-74.0836,
+        activo=True,
+    )
+
+    assert proveedor.activo is True
+    assert proveedor.latitud == 4.6533
+    assert proveedor.longitud == -74.0836

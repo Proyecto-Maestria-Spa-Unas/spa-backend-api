@@ -97,3 +97,18 @@ class Producto:
             stock_minimo=self.stock_minimo,
             descontinuado=self.descontinuado,
         )
+
+
+@dataclass(slots=True)
+class Proveedor:
+    """Entidad de dominio de proveedor, independiente del ORM y la API."""
+
+    id: UUID
+    nit: str
+    nombre: str
+    telefono: str | None
+    correo: str | None
+    direccion: str | None
+    latitud: float | None
+    longitud: float | None
+    activo: bool
