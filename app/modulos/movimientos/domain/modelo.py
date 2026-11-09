@@ -5,7 +5,10 @@ El saldo lo actualiza el trigger `trg_movimiento_aplicar` en la misma transacci√
 """
 
 from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal
 from enum import StrEnum
+from uuid import UUID
 
 
 class TipoMovimiento(StrEnum):
@@ -20,3 +23,26 @@ class MotivoMovimiento:
     codigo: str
     nombre: str
     aplica_a: TipoMovimiento
+
+
+@dataclass(frozen=True, slots=True)
+class Movimiento:
+    id: int
+    producto_id: UUID
+    tipo: TipoMovimiento
+    motivo_codigo: str
+    cantidad: Decimal
+    saldo_resultante: Decimal
+    costo_unitario: Decimal | None
+    costo_promedio_resultante: Decimal
+    proveedor_id: UUID | None
+    observacion: str | None
+    registrado_por: UUID
+    ocurrido_en: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class MovimientoRegistrado:
+    movimiento: Movimiento
+    saldo: Decimal
+    estado: str

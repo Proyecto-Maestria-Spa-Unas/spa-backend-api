@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 PRODUCTO = "11111111-1111-4111-8111-111111111111"
+PROVEEDOR = "f0000000-0000-4000-8000-000000000001"
 USUARIO = "22222222-2222-4222-8222-222222222222"
 IDEMPOTENCIA = {"Idempotency-Key": "33333333-3333-4333-8333-333333333333"}
 
@@ -99,7 +100,13 @@ CASOS: list[Caso] = [
         "/movimientos/entradas",
         "movimiento.registrar_entrada",
         "/movimientos/entradas",
-        {"producto_id": PRODUCTO, "cantidad": "10", "motivo_codigo": "COMPRA"},
+        {
+            "producto_id": PRODUCTO,
+            "cantidad": "10",
+            "motivo_codigo": "COMPRA",
+            "costo_unitario": "38.50",
+            "proveedor_id": PROVEEDOR,
+        },
         headers=IDEMPOTENCIA,
     ),
     Caso(
