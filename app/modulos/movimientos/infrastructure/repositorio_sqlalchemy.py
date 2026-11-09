@@ -201,27 +201,31 @@ class MovimientoRepositorySQL:
             raise RecursoNoExiste("Movimiento no encontrado")
         try:
             with self._session.begin_nested():
-                fila = self._session.execute(
-                    text(
-                        """
-                        INSERT INTO inventario.movimiento (
-                            producto_id, tipo, motivo_id, cantidad, observacion,
-                            registrado_por, movimiento_anulado_id, clave_idempotencia
-                        ) VALUES (
-                            :producto_id, 'ANULACION', NULL, 1, :observacion,
-                            :registrado_por, :movimiento_anulado_id, :clave_idempotencia
-                        )
-                        RETURNING id
-                        """
-                    ),
-                    {
-                        "producto_id": producto_id,
-                        "observacion": motivo,
-                        "registrado_por": registrado_por,
-                        "movimiento_anulado_id": movimiento_id,
-                        "clave_idempotencia": clave_idempotencia,
-                    },
-                ).mappings().one()
+                fila = (
+                    self._session.execute(
+                        text(
+                            """
+                            INSERT INTO inventario.movimiento (
+                                producto_id, tipo, motivo_id, cantidad, observacion,
+                                registrado_por, movimiento_anulado_id, clave_idempotencia
+                            ) VALUES (
+                                :producto_id, 'ANULACION', NULL, 1, :observacion,
+                                :registrado_por, :movimiento_anulado_id, :clave_idempotencia
+                            )
+                            RETURNING id
+                            """
+                        ),
+                        {
+                            "producto_id": producto_id,
+                            "observacion": motivo,
+                            "registrado_por": registrado_por,
+                            "movimiento_anulado_id": movimiento_id,
+                            "clave_idempotencia": clave_idempotencia,
+                        },
+                    )
+                    .mappings()
+                    .one()
+                )
         except IntegrityError as error:
             if self._constraint_name(error) == "movimiento_anulado_uk":
                 raise MovimientoYaAnulado() from error

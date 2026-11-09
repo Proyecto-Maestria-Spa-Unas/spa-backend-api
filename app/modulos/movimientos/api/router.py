@@ -127,6 +127,7 @@ def registrar_salida(
 def listar_movimientos(
     principal: Consultor,
     pagina: Paginacion,
+    repositorio: MovimientosRepo,
     producto_id: Annotated[UUID | None, Query()] = None,
     tipo: Annotated[TipoMovimiento | None, Query()] = None,
     usuario_id: Annotated[UUID | None, Query()] = None,
