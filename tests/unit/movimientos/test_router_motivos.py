@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from app.compartido.config import get_settings
 from app.main import app
-from app.modulos.movimientos.api.router import obtener_movimientos_repository
+from app.modulos.movimientos.api.router import obtener_repositorio_movimientos
 from app.modulos.movimientos.domain.modelo import MotivoMovimiento, TipoMovimiento
 from tests.conftest import FabricaToken
 
@@ -30,7 +30,7 @@ class RepositorioFalso:
 def con_repositorio() -> Iterator[Callable[..., RepositorioFalso]]:
     def _instalar(*motivos: MotivoMovimiento) -> RepositorioFalso:
         falso = RepositorioFalso(*motivos)
-        app.dependency_overrides[obtener_movimientos_repository] = lambda: falso
+        app.dependency_overrides[obtener_repositorio_movimientos] = lambda: falso
         return falso
 
     yield _instalar

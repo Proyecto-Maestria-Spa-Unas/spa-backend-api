@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
 from app.compartido.db import get_session
-from app.compartido.errores import DatosInvalidos, NoImplementado, RecursoNoExiste
+from app.compartido.errores import DatosInvalidos, RecursoNoExiste
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, requiere
