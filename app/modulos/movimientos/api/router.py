@@ -8,8 +8,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query
+from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
+from app.compartido.db import get_session
 from app.compartido.errores import NoImplementado
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
@@ -22,11 +24,29 @@ from app.modulos.movimientos.api.esquemas import (
     MovimientoRegistrado,
     SalidaRegistrar,
 )
+from app.modulos.movimientos.application.puertos import MovimientoRepository
+from app.modulos.movimientos.domain.modelo import MovimientoRegistrado as MovimientoRegistradoDominio
 from app.modulos.movimientos.domain.modelo import TipoMovimiento
+from app.modulos.movimientos.infrastructure.repositorio_sqlalchemy import MovimientoRepositorySQL
 
 router = APIRouter(tags=["movimientos"])
 Consultor = Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_CONSULTAR))]
 ClaveIdempotencia = Annotated[UUID, Header(alias="Idempotency-Key", description="UUID único por intento")]
+
+
+def obtener_repositorio_movimientos(session: Annotated[Session, Depends(get_session)]) -> MovimientoRepository:
+    return MovimientoRepositorySQL(session)
+
+
+MovimientosRepo = Annotated[MovimientoRepository, Depends(obtener_repositorio_movimientos)]
+
+
+def _respuesta_registro(registro: MovimientoRegistradoDominio) -> MovimientoRegistrado:
+    return MovimientoRegistrado(
+        movimiento=Movimiento.model_validate(registro.movimiento, from_attributes=True),
+        saldo=registro.saldo,
+        estado=registro.estado,
+    )
 
 
 @router.get(
@@ -49,11 +69,22 @@ def listar_motivos(_: Consultor, tipo: Annotated[TipoMovimiento | None, Query()]
     responses=respuestas(404, 409),
 )
 def registrar_entrada(
-    _: Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_REGISTRAR_ENTRADA))],
+    principal: Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_REGISTRAR_ENTRADA))],
     datos: EntradaRegistrar,
     clave: ClaveIdempotencia,
+    repositorio: MovimientosRepo,
 ) -> MovimientoRegistrado:
-    raise NoImplementado()
+    registro = repositorio.registrar_entrada(
+        producto_id=datos.producto_id,
+        cantidad=datos.cantidad,
+        motivo_codigo=datos.motivo_codigo,
+        costo_unitario=datos.costo_unitario,
+        proveedor_id=datos.proveedor_id,
+        observacion=datos.observacion,
+        registrado_por=principal.usuario_id,
+        clave_idempotencia=clave,
+    )
+    return _respuesta_registro(registro)
 
 
 @router.post(
@@ -65,11 +96,20 @@ def registrar_entrada(
     responses=respuestas(404, 409),
 )
 def registrar_salida(
-    _: Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_REGISTRAR_SALIDA))],
+    principal: Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_REGISTRAR_SALIDA))],
     datos: SalidaRegistrar,
     clave: ClaveIdempotencia,
+    repositorio: MovimientosRepo,
 ) -> MovimientoRegistrado:
-    raise NoImplementado()
+    registro = repositorio.registrar_salida(
+        producto_id=datos.producto_id,
+        cantidad=datos.cantidad,
+        motivo_codigo=datos.motivo_codigo,
+        observacion=datos.observacion,
+        registrado_por=principal.usuario_id,
+        clave_idempotencia=clave,
+    )
+    return _respuesta_registro(registro)
 
 
 @router.get(
