@@ -8,8 +8,10 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, Query
+from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
+from app.compartido.db import get_session
 from app.compartido.errores import NoImplementado
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
@@ -23,10 +25,22 @@ from app.modulos.movimientos.api.esquemas import (
     SalidaRegistrar,
 )
 from app.modulos.movimientos.domain.modelo import TipoMovimiento
+from app.modulos.movimientos.infrastructure.repositorio_sqlalchemy import (
+    MovimientoRepositorySQL,
+)
 
 router = APIRouter(tags=["movimientos"])
 Consultor = Annotated[Principal, Depends(requiere(Permiso.MOVIMIENTO_CONSULTAR))]
 ClaveIdempotencia = Annotated[UUID, Header(alias="Idempotency-Key", description="UUID único por intento")]
+
+
+def obtener_movimientos_repository(
+    session: Annotated[Session, Depends(get_session)],
+) -> MovimientoRepositorySQL:
+    return MovimientoRepositorySQL(session)
+
+
+MovimientosRepo = Annotated[MovimientoRepositorySQL, Depends(obtener_movimientos_repository)]
 
 
 @router.get(
@@ -36,8 +50,22 @@ ClaveIdempotencia = Annotated[UUID, Header(alias="Idempotency-Key", description=
     description="movimiento.consultar · RF-10",
     responses=respuestas(),
 )
-def listar_motivos(_: Consultor, tipo: Annotated[TipoMovimiento | None, Query()] = None) -> list[MotivoMovimiento]:
-    raise NoImplementado()
+def listar_motivos(
+    _: Consultor,
+    repositorio: MovimientosRepo,
+    tipo: Annotated[TipoMovimiento | None, Query()] = None,
+) -> list[MotivoMovimiento]:
+    motivos = repositorio.listar_motivos(tipo)
+
+    return [
+        MotivoMovimiento(
+            id=motivo.id,
+            codigo=motivo.codigo,
+            nombre=motivo.nombre,
+            aplica_a=motivo.aplica_a,
+        )
+        for motivo in motivos
+    ]
 
 
 @router.post(

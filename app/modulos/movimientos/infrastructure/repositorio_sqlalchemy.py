@@ -9,7 +9,10 @@ Errores de la base que este adaptador traduce a errores de dominio (app.comparti
 from typing import Any
 from uuid import UUID
 
+from sqlalchemy import text
 from sqlalchemy.orm import Session
+
+from app.modulos.movimientos.domain.modelo import MotivoMovimiento, TipoMovimiento
 
 
 class MovimientoRepositorySQL:
@@ -24,3 +27,34 @@ class MovimientoRepositorySQL:
 
     def obtener(self, movimiento_id: int) -> Any | None:
         raise NotImplementedError
+
+    def listar_motivos(self, tipo: TipoMovimiento | None = None) -> list[MotivoMovimiento]:
+        filas = (
+            self._session.execute(
+                text(
+                    """
+                    SELECT id, codigo, nombre, aplica_a
+                    FROM inventario.motivo_movimiento
+                    WHERE activo = TRUE
+                    AND (
+                        CAST(:tipo AS TEXT) IS NULL
+                        OR aplica_a = :tipo
+                    )
+                    ORDER BY nombre, codigo
+                    """
+                ),
+                {"tipo": tipo.value if tipo is not None else None},
+            )
+            .mappings()
+            .all()
+        )
+
+        return [
+            MotivoMovimiento(
+                id=fila["id"],
+                codigo=fila["codigo"],
+                nombre=fila["nombre"],
+                aplica_a=TipoMovimiento(fila["aplica_a"]),
+            )
+            for fila in filas
+        ]
