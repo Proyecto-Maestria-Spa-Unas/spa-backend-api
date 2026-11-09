@@ -16,7 +16,12 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.compartido.errores import DatosInvalidos, MovimientoYaAnulado, RecursoNoExiste
-from app.modulos.movimientos.domain.modelo import Movimiento, MovimientoRegistrado, TipoMovimiento
+from app.modulos.movimientos.domain.modelo import (
+    MotivoMovimiento,
+    Movimiento,
+    MovimientoRegistrado,
+    TipoMovimiento,
+)
 
 
 class MovimientoRepositorySQL:
@@ -390,6 +395,40 @@ class MovimientoRepositorySQL:
         diag = getattr(error.orig, "diag", None)
         return getattr(diag, "constraint_name", None)
 
+    def listar_motivos(
+        self,
+        tipo: TipoMovimiento | None = None,
+    ) -> list[MotivoMovimiento]:
+        filas = (
+            self._session.execute(
+                text(
+                    """
+                    SELECT id, codigo, nombre, aplica_a
+                    FROM inventario.motivo_movimiento
+                    WHERE activo = TRUE
+                    AND (
+                        CAST(:tipo AS TEXT) IS NULL
+                        OR aplica_a = :tipo
+                    )
+                    ORDER BY nombre, codigo
+                    """
+                ),
+                {"tipo": tipo.value if tipo is not None else None},
+            )
+            .mappings()
+            .all()
+        )
+
+        return [
+            MotivoMovimiento(
+                id=fila["id"],
+                codigo=fila["codigo"],
+                nombre=fila["nombre"],
+                aplica_a=TipoMovimiento(fila["aplica_a"]),
+            )
+            for fila in filas
+        ]
+
     @staticmethod
     def _a_movimiento(fila: RowMapping) -> Movimiento:
         return Movimiento(
@@ -399,7 +438,7 @@ class MovimientoRepositorySQL:
             motivo_codigo=fila["motivo_codigo"] or "",
             cantidad=Decimal(fila["cantidad"]),
             saldo_resultante=Decimal(fila["saldo_resultante"]),
-            costo_unitario=Decimal(fila["costo_unitario"]) if fila["costo_unitario"] is not None else None,
+            costo_unitario=(Decimal(fila["costo_unitario"]) if fila["costo_unitario"] is not None else None),
             costo_promedio_resultante=Decimal(fila["costo_promedio_resultante"]),
             proveedor_id=fila["proveedor_id"],
             observacion=fila["observacion"],

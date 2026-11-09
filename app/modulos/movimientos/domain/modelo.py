@@ -17,6 +17,14 @@ class TipoMovimiento(StrEnum):
     ANULACION = "ANULACION"
 
 
+@dataclass(slots=True)
+class MotivoMovimiento:
+    id: int
+    codigo: str
+    nombre: str
+    aplica_a: TipoMovimiento
+
+
 @dataclass(frozen=True, slots=True)
 class Movimiento:
     id: int
