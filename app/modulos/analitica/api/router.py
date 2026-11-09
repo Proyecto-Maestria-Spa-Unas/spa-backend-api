@@ -10,7 +10,6 @@ from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
 from app.compartido.db import get_session
-from app.compartido.errores import NoImplementado
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, requiere
 from app.modulos.analitica.api.esquemas import (
@@ -28,13 +27,16 @@ from app.modulos.analitica.api.esquemas import (
     Tablero,
 )
 from app.modulos.analitica.application.alertas import ConsultarResumenAlertas, ListarAlertas
+from app.modulos.analitica.application.exportacion import ExportarDatos
 from app.modulos.analitica.application.kardex import ConsultarKardex
 from app.modulos.analitica.application.proveedores import BuscarProveedoresCercanos, ConsultasProveedores
+from app.modulos.analitica.application.puertos import Exportador
 from app.modulos.analitica.application.tablero import CalcularCobertura, ConsultarConsumo, ObtenerTablero
 from app.modulos.analitica.domain.modelo import AgrupacionConsumo, EstadoAlerta
 from app.modulos.analitica.domain.modelo import Alerta as AlertaDominio
 from app.modulos.analitica.domain.modelo import ResumenAlertas as ResumenDominio
 from app.modulos.analitica.infrastructure.consultas_sql import ConsultasAnaliticasSQL
+from app.modulos.analitica.infrastructure.exportador_duckdb import ExportadorDuckDB
 from app.modulos.analitica.infrastructure.proveedores_sql import ProveedoresSQL
 
 router = APIRouter(tags=["analitica"])
@@ -159,6 +161,13 @@ def cobertura(_: Analista, consultas: Consultas, hoy: Hoy) -> list[Cobertura]:
     ]
 
 
+def obtener_exportador(session: Annotated[Session, Depends(get_session)]) -> Exportador:
+    return ExportadorDuckDB(session)
+
+
+ExportadorDatos = Annotated[Exportador, Depends(obtener_exportador)]
+
+
 @router.get(
     "/analitica/exportar",
     summary="Exportar inventario o movimientos (DuckDB)",
@@ -172,9 +181,19 @@ def cobertura(_: Analista, consultas: Consultas, hoy: Hoy) -> list[Cobertura]:
 def exportar(
     _: Analista,
     conjunto: Annotated[Literal["inventario", "movimientos"], Query()],
+    exportador: ExportadorDatos,
+    hoy: Hoy,
     formato: Annotated[Literal["csv", "parquet"], Query()] = "csv",
 ) -> Response:
-    raise NoImplementado()
+    archivo = ExportarDatos(exportador)(conjunto, formato, hoy)
+    return Response(
+        content=archivo.contenido,
+        media_type=archivo.tipo_mime,
+        headers={
+            "Content-Disposition": f'attachment; filename="{archivo.nombre}"',
+            "Cache-Control": "no-store",  # son datos del negocio: que ningún caché los guarde
+        },
+    )
 
 
 @router.get(
