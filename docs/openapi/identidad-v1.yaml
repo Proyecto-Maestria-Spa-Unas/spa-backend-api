@@ -43,12 +43,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
   /auth/recuperar:
     post:
       tags:
@@ -87,12 +81,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
   /auth/me:
     get:
       tags:
@@ -121,12 +109,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -205,12 +187,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
     post:
       tags:
       - identidad
@@ -246,12 +222,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -300,12 +270,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -359,12 +323,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -423,12 +381,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
         '404':
           description: RECURSO_NO_EXISTE
           content:
@@ -466,12 +418,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:

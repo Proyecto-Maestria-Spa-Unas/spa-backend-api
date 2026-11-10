@@ -51,12 +51,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
   /movimientos/entradas:
     post:
       tags:
@@ -103,12 +97,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -171,12 +159,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -293,12 +275,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
   /movimientos/{movimiento_id}:
     get:
       tags:
@@ -336,12 +312,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:
@@ -404,12 +374,6 @@ paths:
                 $ref: '#/components/schemas/Problema'
         '422':
           description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Problema'
-        '501':
-          description: 'NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar'
           content:
             application/problem+json:
               schema:

@@ -37,7 +37,7 @@ app/
 2. **Puerto** `catalogo/application/puertos.py`: `CatalogoRepository.listar_categorias()` devuelve entidades del dominio.
 3. **Caso de uso** `catalogo/application/listar_categorias.py`: recibe el puerto por constructor.
 4. **Adaptador** `catalogo/infrastructure/repositorio_sqlalchemy.py`: consulta `inventario.categoria` con la `Session`.
-5. **Router** `catalogo/api/router.py`: reemplazar `raise NoImplementado()` por:
+5. **Router** `catalogo/api/router.py`: inyectar el repositorio y exponer el endpoint:
 
 ```python
 def listar_categorias(_: Consultor, session: Annotated[Session, Depends(get_session)]) -> list[Categoria]:

@@ -1,4 +1,4 @@
-"""Router de S2 · Catálogo."""
+"""Router de S2 · Catálogo. No existe DELETE /productos: FastAPI responde 405 (RN-12)."""
 
 from typing import Annotated
 from uuid import UUID

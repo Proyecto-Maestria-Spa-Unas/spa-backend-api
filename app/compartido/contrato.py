@@ -35,7 +35,6 @@ RESPUESTAS_PROTEGIDAS: dict[int | str, dict[str, Any]] = {
     401: _r("NO_AUTENTICADO: falta el token o está vencido"),
     403: _r("SIN_PERMISO: el rol no tiene el permiso del endpoint"),
     422: _r("DATOS_INVALIDOS: campos faltantes o fuera de regla"),
-    501: _r("NO_IMPLEMENTADO: definido en el contrato, pendiente de implementar"),
 }
 
 
