@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.compartido.contrato import respuestas
 from app.compartido.db import get_session
-from app.compartido.errores import NoImplementado, RecursoNoExiste
+from app.compartido.errores import RecursoNoExiste
 from app.compartido.paginacion import Pagina, Paginacion
 from app.compartido.permisos import Permiso
 from app.compartido.seguridad import Principal, requiere
@@ -23,6 +23,7 @@ from app.modulos.catalogo.api.esquemas import (
     ProveedorActualizar,
     ProveedorCrear,
     StockMinimo,
+    Ubicacion,
     UnidadMedida,
 )
 from app.modulos.catalogo.domain.modelo import (
@@ -31,6 +32,10 @@ from app.modulos.catalogo.domain.modelo import (
 from app.modulos.catalogo.domain.modelo import (
     Producto as ProductoDominio,
 )
+from app.modulos.catalogo.domain.modelo import (
+    Proveedor as ProveedorDominio,
+)
+from app.modulos.catalogo.infrastructure.proveedores_sql import ProveedoresSQL
 from app.modulos.catalogo.infrastructure.repositorio_sqlalchemy import (
     CatalogoRepositorySQL,
 )
@@ -51,6 +56,15 @@ def obtener_catalogo_repository(
 CatalogoRepo = Annotated[CatalogoRepositorySQL, Depends(obtener_catalogo_repository)]
 
 
+def obtener_proveedores_repository(
+    session: Annotated[Session, Depends(get_session)],
+) -> ProveedoresSQL:
+    return ProveedoresSQL(session)
+
+
+ProveedoresRepo = Annotated[ProveedoresSQL, Depends(obtener_proveedores_repository)]
+
+
 def producto_a_respuesta(producto: ProductoDominio) -> Producto:
     """Convierte la entidad del dominio al esquema de respuesta de la API."""
     return Producto(
@@ -67,6 +81,26 @@ def producto_a_respuesta(producto: ProductoDominio) -> Producto:
         version=producto.version,
         creado_en=producto.creado_en,
         actualizado_en=producto.actualizado_en,
+    )
+
+
+def proveedor_a_respuesta(proveedor: ProveedorDominio) -> Proveedor:
+    """Convierte la entidad del dominio al esquema de respuesta de la API."""
+    ubicacion = (
+        Ubicacion(latitud=proveedor.latitud, longitud=proveedor.longitud)
+        if proveedor.latitud is not None and proveedor.longitud is not None
+        else None
+    )
+
+    return Proveedor(
+        id=proveedor.id,
+        nit=proveedor.nit,
+        nombre=proveedor.nombre,
+        telefono=proveedor.telefono,
+        correo=proveedor.correo,
+        direccion=proveedor.direccion,
+        ubicacion=ubicacion,
+        activo=proveedor.activo,
     )
 
 
@@ -263,9 +297,11 @@ def reactivar_producto(_: Descontinuador, producto_id: UUID, repositorio: Catalo
 )
 def listar_proveedores(
     _: Consultor,
+    repositorio: ProveedoresRepo,
     incluir_inactivos: Annotated[bool, Query()] = False,
 ) -> list[Proveedor]:
-    raise NoImplementado()
+    proveedores = repositorio.listar(incluir_inactivos)
+    return [proveedor_a_respuesta(proveedor) for proveedor in proveedores]
 
 
 @router.post(
@@ -276,8 +312,13 @@ def listar_proveedores(
     description="catalogo.administrar · NIT único",
     responses=respuestas(409),
 )
-def crear_proveedor(_: AdminCatalogo, datos: ProveedorCrear) -> Proveedor:
-    raise NoImplementado()
+def crear_proveedor(
+    _: AdminCatalogo,
+    datos: ProveedorCrear,
+    repositorio: ProveedoresRepo,
+) -> Proveedor:
+    proveedor = repositorio.crear(datos.model_dump(mode="python"))
+    return proveedor_a_respuesta(proveedor)
 
 
 @router.patch(
@@ -291,5 +332,10 @@ def actualizar_proveedor(
     _: AdminCatalogo,
     proveedor_id: UUID,
     datos: ProveedorActualizar,
+    repositorio: ProveedoresRepo,
 ) -> Proveedor:
-    raise NoImplementado()
+    proveedor = repositorio.actualizar(
+        proveedor_id,
+        datos.model_dump(exclude_unset=True),
+    )
+    return proveedor_a_respuesta(proveedor)
