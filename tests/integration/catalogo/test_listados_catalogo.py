@@ -72,9 +72,5 @@ def test_listar_categorias_y_unidades_contrato_y_datos_reales(
 
     assert categorias == categorias_esperadas
     assert unidades == unidades_esperadas
-    assert all(
-        set(categoria) == {"id", "nombre", "descripcion", "orden", "activa"} for categoria in categorias
-    )
-    assert all(
-        set(unidad) == {"id", "codigo", "nombre", "magnitud", "admite_decimales"} for unidad in unidades
-    )
+    assert all(set(categoria) == {"id", "nombre", "descripcion", "orden", "activa"} for categoria in categorias)
+    assert all(set(unidad) == {"id", "codigo", "nombre", "magnitud", "admite_decimales"} for unidad in unidades)
