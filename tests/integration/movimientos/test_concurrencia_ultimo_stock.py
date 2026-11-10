@@ -97,10 +97,14 @@ def test_diez_pares_de_salidas_concurrentes_protegen_el_ultimo_stock(
             assert sorted(par) == [201, 409]
 
         with motor.connect() as verificacion:
-            stocks = verificacion.execute(
-                text("SELECT stock_actual FROM inventario.producto WHERE id = ANY(:ids) ORDER BY codigo"),
-                {"ids": producto_ids},
-            ).scalars().all()
+            stocks = (
+                verificacion.execute(
+                    text("SELECT stock_actual FROM inventario.producto WHERE id = ANY(:ids) ORDER BY codigo"),
+                    {"ids": producto_ids},
+                )
+                .scalars()
+                .all()
+            )
         assert len(stocks) == 10
         assert all(stock == 0 for stock in stocks)
     finally:
