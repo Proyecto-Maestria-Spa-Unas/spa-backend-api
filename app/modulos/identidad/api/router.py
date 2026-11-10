@@ -1,6 +1,5 @@
 """Router de S1 · Identidad. Cada función es un endpoint del contrato (sección 5).
 
-Para implementar: reemplace `raise NoImplementado()` por la llamada al caso de uso.
 No cambie la ruta, el permiso ni el esquema sin un PR de contrato aprobado por frontend.
 """
 

@@ -82,12 +82,6 @@ class DatosInvalidos(ErrorDominio):
     code, status, title = "DATOS_INVALIDOS", 422, "Los datos enviados no son válidos"
 
 
-class NoImplementado(ErrorDominio):
-    """Marcador del andamiaje: el endpoint existe en el contrato pero aún no tiene lógica."""
-
-    code, status, title = "NO_IMPLEMENTADO", 501, "Endpoint definido en el contrato, pendiente de implementar"
-
-
 def _problema(status: int, code: str, title: str, detail: str, errors: list[Any] | None = None) -> JSONResponse:
     cuerpo = {
         "type": f"https://spa-unas/errores/{code.lower().replace('_', '-')}",

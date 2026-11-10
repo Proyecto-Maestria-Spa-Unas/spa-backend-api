@@ -36,7 +36,7 @@ Productos, categorías, unidades de medida, stock mínimo y descontinuación (HU
 | `application/puertos.py` | `CatalogoRepository` con entidades del dominio |
 | `application/*.py` | Casos de uso: `ListarCategorias`, `CrearProducto`, `DescontinuarProducto`... |
 | `infrastructure/repositorio_sqlalchemy.py` | **B4:** `inventario.categoria`, `unidad_medida`, `producto` y la vista `v_inventario` |
-| `api/router.py` | Reemplazar `raise NoImplementado()` |
+| `api/router.py` | Exponer los casos de uso mediante los endpoints del contrato |
 
 Reglas de datos: S2 **lee** `stock_actual` pero nunca lo escribe (lo actualiza el trigger de S3). `POST /productos` con `cantidad_inicial` registra la entrada `SALDO_INICIAL` en la misma transacción.
 

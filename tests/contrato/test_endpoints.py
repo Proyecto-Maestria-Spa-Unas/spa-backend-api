@@ -25,15 +25,21 @@ def _llamar(cliente: TestClient, caso: Caso, cabeceras: dict[str, str]) -> tuple
 
 def test_cobertura_de_la_tabla() -> None:
     """Todo endpoint de dominio declarado en los routers está en la tabla, y viceversa."""
+    openapi = app.openapi()
     declarados = {
         (metodo.upper(), ruta.removeprefix(PREFIJO))
-        for ruta, operaciones in app.openapi()["paths"].items()
+        for ruta, operaciones in openapi["paths"].items()
         if not ruta.startswith(f"{PREFIJO}/health")
         for metodo in operaciones
     }
     en_tabla = {(c.metodo, c.ruta) for c in CASOS}
     assert declarados == en_tabla
     assert len(CASOS) == 37
+    assert all(
+        "501" not in operacion["responses"]
+        for ops in openapi["paths"].values()
+        for operacion in ops.values()
+    )
 
 
 PROTEGIDOS = [c for c in CASOS if c.permiso != PUBLICO]
@@ -64,8 +70,7 @@ def test_con_el_permiso_llega_al_endpoint(cliente: TestClient, cabeceras: Fabric
     permisos = () if caso.permiso in (PUBLICO, AUTENTICADO) else (caso.permiso,)
     estado, cuerpo = _llamar(cliente, caso, cabeceras(*permisos))
     assert estado not in (401, 403, 404, 405, 422), cuerpo
-    if estado == 501:  # todavía pendiente de implementar
-        assert cuerpo["code"] == "NO_IMPLEMENTADO"
+    assert estado != 501, cuerpo
 
 
 @pytest.mark.parametrize("ruta", [f"/productos/{PRODUCTO}", "/movimientos/1"])
