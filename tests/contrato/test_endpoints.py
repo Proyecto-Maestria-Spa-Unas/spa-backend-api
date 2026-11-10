@@ -35,11 +35,7 @@ def test_cobertura_de_la_tabla() -> None:
     en_tabla = {(c.metodo, c.ruta) for c in CASOS}
     assert declarados == en_tabla
     assert len(CASOS) == 37
-    assert all(
-        "501" not in operacion["responses"]
-        for ops in openapi["paths"].values()
-        for operacion in ops.values()
-    )
+    assert all("501" not in operacion["responses"] for ops in openapi["paths"].values() for operacion in ops.values())
 
 
 PROTEGIDOS = [c for c in CASOS if c.permiso != PUBLICO]
