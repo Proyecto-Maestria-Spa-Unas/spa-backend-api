@@ -104,7 +104,7 @@ Acceder a:
 * 💚 Estado del servicio: http://127.0.0.1:8000/api/v1/health
 * 🗄️ Conexión con la base: http://127.0.0.1:8000/api/v1/health/ready
 
-Mientras un endpoint no esté implementado responde `501` con `code: NO_IMPLEMENTADO`. Todos exigen su permiso desde ya: sin token responden `401` y sin el permiso `403`.
+Los 37 endpoints del contrato están implementados. No se responde `501`: los errores funcionales usan `application/problem+json` con un `code` estable. Los endpoints protegidos responden `401` sin token y `403` sin el permiso requerido.
 
 ## 📦 Dependencias Principales
 

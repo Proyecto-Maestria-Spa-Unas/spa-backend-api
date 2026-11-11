@@ -27,7 +27,7 @@ Autenticación, emisión del JWT, usuarios, roles y permisos (HU-01, HU-09 · RF
 | `application/*.py` | Casos de uso: `IniciarSesion`, `CrearUsuario`, `CambiarEstadoUsuario`... |
 | `infrastructure/supabase_auth.py` | Login y alta de cuentas con httpx contra Supabase Auth. Único archivo que lee `SUPABASE_SECRET_KEY` |
 | `infrastructure/repositorio_sqlalchemy.py` | `seguridad.perfil`, `rol`, `rol_permiso` |
-| `api/router.py` | Reemplazar cada `raise NoImplementado()` por el caso de uso |
+| `api/router.py` | Exponer los casos de uso implementados mediante los endpoints del contrato |
 
 `POST /auth/login` debe terminar con `app.compartido.seguridad.emitir_token(usuario_id, rol, permisos)`.
 
