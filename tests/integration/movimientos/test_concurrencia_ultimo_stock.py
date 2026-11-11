@@ -67,7 +67,12 @@ def test_diez_pares_de_salidas_concurrentes_protegen_el_ultimo_stock(
 
         def sesion_por_peticion() -> Iterator[Session]:
             with Session(motor, expire_on_commit=False) as session:
-                yield session
+                try:
+                    yield session
+                    session.commit()
+                except Exception:
+                    session.rollback()
+                    raise
 
         monkeypatch.setitem(app.dependency_overrides, get_session, sesion_por_peticion)
         token, _ = emitir_token(usuario_id, "ADMINISTRADOR", [PERMISO_SALIDA])
@@ -109,6 +114,7 @@ def test_diez_pares_de_salidas_concurrentes_protegen_el_ultimo_stock(
         assert all(stock == 0 for stock in stocks)
     finally:
         with motor.begin() as limpieza:
+            limpieza.execute(text("SET LOCAL session_replication_role = replica"))
             limpieza.execute(
                 text("DELETE FROM inventario.movimiento WHERE producto_id = ANY(:ids)"), {"ids": producto_ids}
             )
