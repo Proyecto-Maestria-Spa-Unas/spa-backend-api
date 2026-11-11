@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.compartido.errores import (
     CategoriaDuplicada,
     CodigoDuplicado,
-    NoImplementado,
+    ErrorDominio,
     RecursoNoExiste,
     VersionConflicto,
 )
@@ -153,11 +153,6 @@ class CatalogoRepositorySQL:
             )
             producto_id = fila["id"]
             if cantidad_inicial is not None:
-                movimiento_disponible = self._session.execute(
-                    text("SELECT to_regclass('inventario.movimiento') IS NOT NULL")
-                ).scalar_one()
-                if not movimiento_disponible:
-                    raise NoImplementado("El saldo inicial requiere la tabla de movimientos (migración D7)")
                 motivo_id = self._session.execute(
                     text(
                         """
@@ -168,7 +163,7 @@ class CatalogoRepositorySQL:
                     )
                 ).scalar_one_or_none()
                 if motivo_id is None:
-                    raise NoImplementado("El motivo SALDO_INICIAL no está configurado en la base de datos")
+                    raise ErrorDominio("La base de datos no tiene configurado el motivo SALDO_INICIAL")
                 self._session.execute(
                     text(
                         """
