@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Imagen de la API (monolito modular). La misma imagen se usa en local (docker compose) y,
 # en el Sprint 4, como base de cada servicio extraído a EKS.
-FROM python:3.12-slim AS base
+FROM python:3.15-slim AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
 WORKDIR /app
 
