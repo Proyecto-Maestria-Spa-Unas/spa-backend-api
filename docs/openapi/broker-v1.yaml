@@ -1,0 +1,261 @@
+openapi: 3.1.0
+info:
+  title: S5 · Broker · Spa de Uñas
+  version: 1.0.0
+servers:
+- url: /api/v1
+paths:
+  /broker/procesar:
+    post:
+      tags:
+      - broker
+      summary: Procesar un lote de la cola por prioridad
+      description: 'Workflow programado con X-Broker-Token · #75'
+      operationId: procesar_cola
+      parameters:
+      - name: limite
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Trabajos por lote
+          default: 20
+          title: Limite
+        description: Trabajos por lote
+      - name: X-Broker-Token
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: X-Broker-Token
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumenProcesamiento'
+        '401':
+          description: 'NO_AUTENTICADO: token del broker ausente o inválido'
+        '503':
+          description: 'BROKER_NO_CONFIGURADO: falta BROKER_TOKEN en el entorno'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /broker/metricas:
+    get:
+      tags:
+      - broker
+      summary: Estado de la cola por estado y prioridad
+      description: 'usuario.gestionar (solo ADMINISTRADOR) · #75'
+      operationId: metricas_cola
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricasCola'
+        '401':
+          description: 'NO_AUTENTICADO: falta el token o está vencido'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '403':
+          description: 'SIN_PERMISO: el rol no tiene el permiso del endpoint'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+        '422':
+          description: 'DATOS_INVALIDOS: campos faltantes o fuera de regla'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problema'
+      security:
+      - HTTPBearer: []
+components:
+  schemas:
+    ConteoCola:
+      properties:
+        estado:
+          $ref: '#/components/schemas/EstadoTrabajo'
+        prioridad:
+          $ref: '#/components/schemas/Prioridad'
+          description: 1 alta · 2 normal · 3 baja
+        cantidad:
+          type: integer
+          title: Cantidad
+          examples:
+          - 4
+      type: object
+      required:
+      - estado
+      - prioridad
+      - cantidad
+      title: ConteoCola
+    ErrorCampo:
+      properties:
+        campo:
+          title: Campo
+          type: string
+        mensaje:
+          title: Mensaje
+          type: string
+      required:
+      - campo
+      - mensaje
+      title: ErrorCampo
+      type: object
+    EstadoTrabajo:
+      type: string
+      enum:
+      - PENDIENTE
+      - HECHO
+      - FALLIDO
+      title: EstadoTrabajo
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    MetricasCola:
+      properties:
+        pendientes:
+          type: integer
+          title: Pendientes
+          examples:
+          - 4
+        fallidos:
+          type: integer
+          title: Fallidos
+          examples:
+          - 0
+        detalle:
+          items:
+            $ref: '#/components/schemas/ConteoCola'
+          type: array
+          title: Detalle
+      type: object
+      required:
+      - pendientes
+      - fallidos
+      - detalle
+      title: MetricasCola
+    Prioridad:
+      type: integer
+      enum:
+      - 1
+      - 2
+      - 3
+      title: Prioridad
+    Problema:
+      description: Cuerpo `application/problem+json` (RFC 9457) con `code` estable.
+      properties:
+        type:
+          title: Type
+          type: string
+        title:
+          title: Title
+          type: string
+        status:
+          title: Status
+          type: integer
+        detail:
+          title: Detail
+          type: string
+        code:
+          examples:
+          - SIN_PERMISO
+          title: Code
+          type: string
+        errors:
+          default: []
+          items:
+            $ref: '#/components/schemas/ErrorCampo'
+          title: Errors
+          type: array
+      required:
+      - type
+      - title
+      - status
+      - detail
+      - code
+      title: Problema
+      type: object
+    ResumenProcesamiento:
+      properties:
+        tomados:
+          type: integer
+          title: Tomados
+          description: Trabajos tomados de la cola en este lote
+          examples:
+          - 3
+        hechos:
+          type: integer
+          title: Hechos
+          examples:
+          - 2
+        reintentos:
+          type: integer
+          title: Reintentos
+          description: Fallaron y vuelven a la cola con espera exponencial
+          examples:
+          - 1
+        fallidos:
+          type: integer
+          title: Fallidos
+          description: 'Agotaron sus intentos: quedan en la cola de fallidos'
+          examples:
+          - 0
+      type: object
+      required:
+      - tomados
+      - hechos
+      - reintentos
+      - fallidos
+      title: ResumenProcesamiento
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+  securitySchemes:
+    HTTPBearer:
+      type: http
+      description: JWT emitido por POST /api/v1/auth/login
+      scheme: bearer

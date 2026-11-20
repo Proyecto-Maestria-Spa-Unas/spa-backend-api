@@ -1,4 +1,4 @@
-"""Pruebas de contrato y seguridad sobre los 37 endpoints (RF-01, RNF-07).
+"""Pruebas de contrato y seguridad sobre los 39 endpoints (RF-01, RNF-07).
 
 Siguen siendo válidas después de implementar cada endpoint: comprueban que la ruta existe,
 que exige su permiso y que un usuario autorizado llega a la lógica del endpoint.
@@ -10,9 +10,10 @@ from fastapi.testclient import TestClient
 from app.compartido.config import get_settings
 from app.main import app
 from tests.conftest import FabricaToken
-from tests.contrato.endpoints import AUTENTICADO, CASOS, PRODUCTO, PUBLICO, Caso
+from tests.contrato.endpoints import AUTENTICADO, CASOS, PRODUCTO, PUBLICO, TOKEN_BROKER, Caso
 
 PREFIJO = get_settings().api_prefix
+TOKEN_PRUEBA_BROKER = "token-de-prueba-del-broker-0123456789"
 
 
 def _llamar(cliente: TestClient, caso: Caso, cabeceras: dict[str, str]) -> tuple[int, dict[str, object]]:
@@ -34,12 +35,12 @@ def test_cobertura_de_la_tabla() -> None:
     }
     en_tabla = {(c.metodo, c.ruta) for c in CASOS}
     assert declarados == en_tabla
-    assert len(CASOS) == 37
+    assert len(CASOS) == 39
     assert all("501" not in operacion["responses"] for ops in openapi["paths"].values() for operacion in ops.values())
 
 
 PROTEGIDOS = [c for c in CASOS if c.permiso != PUBLICO]
-CON_PERMISO = [c for c in CASOS if c.permiso not in (PUBLICO, AUTENTICADO)]
+CON_PERMISO = [c for c in CASOS if c.permiso not in (PUBLICO, AUTENTICADO, TOKEN_BROKER)]
 
 
 def _ids(casos: list[Caso]) -> list[str]:
@@ -62,9 +63,21 @@ def test_sin_el_permiso_responde_403(cliente: TestClient, cabeceras: FabricaToke
 
 
 @pytest.mark.parametrize("caso", CASOS, ids=_ids(CASOS))
-def test_con_el_permiso_llega_al_endpoint(cliente: TestClient, cabeceras: FabricaToken, caso: Caso) -> None:
-    permisos = () if caso.permiso in (PUBLICO, AUTENTICADO) else (caso.permiso,)
-    estado, cuerpo = _llamar(cliente, caso, cabeceras(*permisos))
+def test_con_el_permiso_llega_al_endpoint(
+    cliente: TestClient, cabeceras: FabricaToken, caso: Caso, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    if caso.permiso == TOKEN_BROKER:
+        # El broker no usa JWT: se autoriza con X-Broker-Token igual al BROKER_TOKEN del entorno.
+        monkeypatch.setenv("BROKER_TOKEN", TOKEN_PRUEBA_BROKER)
+        get_settings.cache_clear()
+        acceso = {"X-Broker-Token": TOKEN_PRUEBA_BROKER}
+    else:
+        permisos = () if caso.permiso in (PUBLICO, AUTENTICADO) else (caso.permiso,)
+        acceso = cabeceras(*permisos)
+    try:
+        estado, cuerpo = _llamar(cliente, caso, acceso)
+    finally:
+        get_settings.cache_clear()
     assert estado not in (401, 403, 404, 405, 422), cuerpo
     assert estado != 501, cuerpo
 
