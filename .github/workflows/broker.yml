@@ -1,0 +1,38 @@
+# Consumidor programado del broker (#75).
+# Vercel no mantiene procesos vivos: este workflow invoca POST /broker/procesar cada 10 minutos.
+# Los workflows programados solo corren desde la rama por defecto (main).
+# Requiere: secreto BROKER_TOKEN y variable BROKER_API_URL (base de la API, terminada en /api/v1).
+name: broker
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: broker
+  cancel-in-progress: false
+
+jobs:
+  procesar:
+    name: broker / procesar
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API_URL: ${{ vars.BROKER_API_URL }}
+      TOKEN: ${{ secrets.BROKER_TOKEN }}
+    steps:
+      - name: Validar configuración
+        run: |
+          for v in API_URL TOKEN; do
+            [ -n "${!v}" ] || { echo "::error::Falta $v (secreto BROKER_TOKEN o variable BROKER_API_URL)"; exit 1; }
+          done
+
+      - name: Procesar cola
+        run: |
+          RESPUESTA=$(curl -fsS -X POST "$API_URL/broker/procesar?limite=50" -H "X-Broker-Token: $TOKEN")
+          echo "$RESPUESTA"
+          echo "Broker · $RESPUESTA" >> "$GITHUB_STEP_SUMMARY"

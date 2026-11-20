@@ -1,4 +1,4 @@
-"""Monolito modular: los 4 servicios de dominio bajo /api/v1 (ADR-0009).
+"""Monolito modular: los 4 servicios de dominio y el broker bajo /api/v1 (ADR-0009, #75).
 
 En el Sprint 4 cada módulo se extrae a su propio servicio en EKS; las rutas no cambian.
 """
@@ -11,11 +11,12 @@ from app.compartido.contrato import id_operacion, instalar_openapi
 from app.compartido.errores import registrar_manejadores
 from app.compartido.salud import router as salud_router
 from app.modulos.analitica.api.router import router as analitica_router
+from app.modulos.broker.api.router import router as broker_router
 from app.modulos.catalogo.api.router import router as catalogo_router
 from app.modulos.identidad.api.router import router as identidad_router
 from app.modulos.movimientos.api.router import router as movimientos_router
 
-ROUTERS_DE_DOMINIO = (identidad_router, catalogo_router, movimientos_router, analitica_router)
+ROUTERS_DE_DOMINIO = (identidad_router, catalogo_router, movimientos_router, analitica_router, broker_router)
 
 
 def create_app() -> FastAPI:

@@ -1,4 +1,4 @@
-"""Inventario de los 37 endpoints del contrato con una petición mínima válida.
+"""Inventario de los 39 endpoints del contrato con una petición mínima válida.
 
 Si agrega o cambia un endpoint, actualice esta tabla: test_cobertura_de_la_tabla falla si
 falta alguno. El permiso de cada fila debe coincidir con la sección 6 del documento.
@@ -14,6 +14,7 @@ IDEMPOTENCIA = {"Idempotency-Key": "33333333-3333-4333-8333-333333333333"}
 
 PUBLICO = "publico"
 AUTENTICADO = "autenticado"
+TOKEN_BROKER = "token-broker"  # llamada entre sistemas con X-Broker-Token, sin JWT (#75)
 
 
 @dataclass(frozen=True)
@@ -148,4 +149,7 @@ CASOS: list[Caso] = [
         params={"latitud": "4.65", "longitud": "-74.08", "radio_km": "15"},
     ),
     Caso("GET", "/analitica/exportar", "analitica.consultar", "/analitica/exportar", params={"conjunto": "inventario"}),
+    # S5 · Broker (#75)
+    Caso("POST", "/broker/procesar", TOKEN_BROKER, "/broker/procesar"),
+    Caso("GET", "/broker/metricas", "usuario.gestionar", "/broker/metricas"),
 ]

@@ -1,7 +1,7 @@
 """Genera docs/openapi/<servicio>-v1.yaml a partir de los routers (un archivo por servicio).
 
 Uso:
-    python scripts/exportar_contratos.py           # escribe los 4 contratos
+    python scripts/exportar_contratos.py           # escribe los 5 contratos
     python scripts/exportar_contratos.py --check   # falla si los archivos no coinciden con el código
 
 Los contratos son el acuerdo con frontend: cualquier cambio entra por PR y lo aprueba equipo-frontend.
@@ -27,6 +27,7 @@ SERVICIOS = {
     "catalogo": "S2 · Catálogo",
     "movimientos": "S3 · Movimientos",
     "analitica": "S4 · Alertas y analítica",
+    "broker": "S5 · Broker",
 }
 DESTINO = RAIZ / "docs" / "openapi"
 PREFIJO = get_settings().api_prefix
