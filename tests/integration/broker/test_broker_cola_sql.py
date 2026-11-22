@@ -177,7 +177,7 @@ def test_salidas_que_cruzan_el_minimo_encolan_alertas_priorizadas(sesion: Sessio
                   producto_id, tipo, motivo_id, cantidad, registrado_por, clave_idempotencia
                 ) VALUES (
                   :producto, :tipo,
-                  (SELECT id FROM inventario.motivo_movimiento WHERE codigo = :motivo AND aplica_a = :tipo),
+                  (SELECT id FROM inventario.motivo_movimiento WHERE codigo = :motivo AND aplica_a = :aplica_a),
                   :cantidad, :usuario, :clave
                 )
                 """
@@ -186,6 +186,7 @@ def test_salidas_que_cruzan_el_minimo_encolan_alertas_priorizadas(sesion: Sessio
                 "producto": producto,
                 "tipo": tipo,
                 "motivo": motivo,
+                "aplica_a": tipo,  # parámetro aparte: la columna y aplica_a tienen tipos distintos
                 "cantidad": cantidad,
                 "usuario": usuario,
                 "clave": uuid4(),
