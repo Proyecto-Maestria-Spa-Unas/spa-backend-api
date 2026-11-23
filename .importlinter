@@ -3,13 +3,14 @@ root_package = app
 include_external_packages = True
 
 [importlinter:contract:modulos-independientes]
-name = Los 4 servicios de dominio no se importan entre sí
+name = Los servicios de dominio y el broker no se importan entre sí
 type = independence
 modules =
     app.modulos.identidad
     app.modulos.catalogo
     app.modulos.movimientos
     app.modulos.analitica
+    app.modulos.broker
 
 [importlinter:contract:compartido-no-depende-de-modulos]
 name = compartido no importa ningún módulo de dominio
@@ -27,6 +28,7 @@ containers =
     app.modulos.catalogo
     app.modulos.movimientos
     app.modulos.analitica
+    app.modulos.broker
 layers =
     api
     infrastructure
@@ -41,6 +43,7 @@ source_modules =
     app.modulos.catalogo.domain
     app.modulos.movimientos.domain
     app.modulos.analitica.domain
+    app.modulos.broker.domain
 forbidden_modules =
     fastapi
     sqlalchemy

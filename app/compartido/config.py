@@ -38,6 +38,10 @@ class Settings(BaseSettings):
     # Sin ella, Supabase usa su "Site URL".
     frontend_url: str | None = Field(default=None, alias="FRONTEND_URL")
 
+    # Broker (#75): token compartido con el workflow programado que invoca POST /broker/procesar.
+    # Sin él, el endpoint responde 503 BROKER_NO_CONFIGURADO.
+    broker_token: SecretStr | None = Field(default=None, alias="BROKER_TOKEN")
+
 
 @lru_cache
 def get_settings() -> Settings:
